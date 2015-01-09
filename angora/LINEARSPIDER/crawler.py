@@ -25,7 +25,10 @@ import:
 
 from __future__ import print_function
 from bs4 import BeautifulSoup as BS4
-import pandas as pd
+try: # if doens't have pandas, ProxyManager will not work
+    import pandas as pd
+except:
+    pass
 import requests
 import random
 import itertools

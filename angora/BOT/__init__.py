@@ -10,4 +10,7 @@
 #                                #
 ##################################
 
-from .macro import Bot
+try:
+    from .macro import Bot
+except:
+    pass

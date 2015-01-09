@@ -11,4 +11,4 @@
 ##################################
 
 from .logger import Log
-from .logicflow import tryit
+from .logicflow import tryit, timetest

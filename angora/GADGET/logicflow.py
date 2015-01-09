@@ -16,10 +16,11 @@ compatibility: compatible to python2 and python3
 prerequisites: None
 
 import:
-    from angora.GADGET.logicflow import tryit
+    from angora.GADGET.logicflow import tryit, timetest
 """
 
 from __future__ import print_function
+import timeit
 
 def tryit(howmany, func, *argv, **kwarg):
     """这个函数使用了一个重要的技巧将原函数的参数原封不动的封装成tryit这个函数的参数了
@@ -41,6 +42,10 @@ def tryit(howmany, func, *argv, **kwarg):
             flag += 1
     raise current_exception
 
+def timetest(func, howmany=1):
+    elapse = timeit.Timer(func).timeit(howmany)
+    print("avg = %s, total = %s, times = %s" % (elapse/howmany, elapse, howmany) )
+
 if __name__ == "__main__":
     def usage_tryit():
         import random
@@ -55,4 +60,19 @@ if __name__ == "__main__":
         except Exception as e:
             print(e)
     
-    usage_tryit()
+#     usage_tryit()
+
+    def usage_timetest():
+        array = list(range(1000000))
+        def iter_list1():
+            for _ in array:
+                pass
+            
+        def iter_list2():
+            for index in range(len(array)):
+                array[index]
+        
+        timetest(iter_list1, 10)
+        timetest(iter_list2, 10)
+        
+#     usage_timetest()
