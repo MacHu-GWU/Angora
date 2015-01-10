@@ -149,7 +149,7 @@ class WinFile(object):
             
         os.rename(self.abspath,
                   os.path.join(new_dirname, new_fname + self.ext) )
-
+        
 def unittest_winfile():
     wf = WinFile("windowsexplorer.py")
     print(wf)
@@ -591,5 +591,3 @@ def unittest_WinExplorer():
 #     iterator_method_test()
     
 # unittest_WinExplorer()
-
-

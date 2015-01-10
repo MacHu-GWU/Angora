@@ -1,14 +1,4 @@
-##################################
-#encoding=utf8                   #
-#version =py27, py33             #
-#author  =sanhe                  #
-#date    =2014-10-29             #
-#                                #
-#    (\ (\                       #
-#    ( -.-)o    I am a Rabbit!   #
-#    o_(")(")                    #
-#                                #
-##################################
+##encoding=utf8
 
 """
 This module is re-pack of some pickle utility functions
@@ -32,7 +22,7 @@ compatibility: compatible to python2 and python3
 prerequisites: None
 
 import:
-    from angora.DATA.pk import load_pk, dump_pk, safe_dump_pk, obj2str, str2obj
+    from angora.DATA.pk import load_pk, dump_pk, safe_dump_pk, obj2bytestr, bytestr2obj, obj2str, str2obj
 """
 
 from __future__ import print_function
@@ -109,6 +99,13 @@ def safe_dump_pk(obj, fname, pickle_protocol = pk_protocol, enable_verbose = Tru
     dump_pk(obj, temp_fname, pickle_protocol = pk_protocol, replace = True, enable_verbose = enable_verbose)
     shutil.move(temp_fname, fname)
 
+def obj2bytestr(obj, pickle_protocol = pk_protocol):
+    """convert arbitrary object to database friendly bytestr"""
+    return pickle.dumps(obj, protocol = pickle_protocol)
+
+def bytestr2obj(bytestr):
+    """recovery object from bytestr"""
+    return pickle.loads(bytestr)
 
 def obj2str(obj, pickle_protocol = pk_protocol):
     """convert arbitrary object to database friendly string, using base64encode algorithm"""

@@ -1,14 +1,4 @@
-##################################
-#encoding=utf8                   #
-#version =py27, py33             #
-#author  =sanhe                  #
-#date    =2014-10-29             #
-#                                #
-#    (\ (\                       #
-#    ( -.-)o    I am a Rabbit!   #
-#    o_(")(")                    #
-#                                #
-##################################
+##encoding=utf8
 
 """一个简单的日志文件夹和日志文件的管理小工具
 能很轻易的把捕获到的异常和自定义错误信息写入到日志中, 并在屏幕上以自定义的缩进形式将错误信息打印出来。
@@ -47,7 +37,7 @@ class Log(object):
         [CN]自动在调用此包的主脚本下创建一个"log"的文件夹，可以在初始化时修改
         """
         self.fname = "%s.txt" % datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%d %H_%M_%S")
-        self.directory = directory
+        self.directory = os.path.abspath(directory)
         if not os.path.exists(self.directory):
             os.mkdir(self.directory)
 

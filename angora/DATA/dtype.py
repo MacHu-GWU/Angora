@@ -1,14 +1,4 @@
-##################################
-#encoding=utf8                   #
-#version =py27, py33             #
-#author  =sanhe                  #
-#date    =2014-10-31             #
-#                                #
-#    (\ (\                       #
-#    ( -.-)o    I am a Rabbit!   #
-#    o_(")(")                    #
-#                                #
-##################################
+##encoding=utf8
 
 """
 [EN] A set of tools for data structure and data type
@@ -107,3 +97,4 @@ if __name__ == "__main__":
         orderedSet_UT2()
         
     test_OrderedSet()
+    

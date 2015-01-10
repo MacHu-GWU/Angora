@@ -1,14 +1,4 @@
-##################################
-#encoding=utf8                   #
-#version =py27, py33             #
-#author  =sanhe                  #
-#date    =2014-12-04             #
-#                                #
-#    (\ (\                       #
-#    ( -.-)o    I am a Rabbit!   #
-#    o_(")(")                    #
-#                                #
-##################################
+##encoding=utf8
 
 """
 dicttree is a tree structure implementation in python built-in dictionary

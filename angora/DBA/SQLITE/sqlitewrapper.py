@@ -1,10 +1,8 @@
 ##encoding=utf8
 
 """
-
-关于 IntegrityError 问题的详细解说:
-
-什么是IntegrityError
+import:
+    from angora.DBA.SQLITE.sqlitewrapper import iterC, prt_all, stable_insertmany
 """
 
 import sqlite3

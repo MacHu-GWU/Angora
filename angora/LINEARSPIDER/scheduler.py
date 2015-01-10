@@ -1,14 +1,4 @@
-##################################
-#encoding=utf8                   #
-#version =py27, py33             #
-#author  =sanhe                  #
-#date    =2014-11-26             #
-#                                #
-#    (\ (\                       #
-#    ( -.-)o    I am a Rabbit!   #
-#    o_(")(")                    #
-#                                #
-##################################
+##encoding=utf8
 
 """
 A Linear Link Extractor Scheduler automatically handle:
