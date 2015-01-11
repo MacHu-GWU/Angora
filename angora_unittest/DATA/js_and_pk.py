@@ -56,7 +56,24 @@ class Pk_unittest():
         safe_dump_pk(data, fname)                   # 然后以同样的文件名dump，看看会不会出现临时文件
 
     @staticmethod
-    def pk_vs_database():
+    def pk_vs_database1():
+        """pickle.dumps的结果是bytes, 而在python2中的sqlite不支持bytes直接插入数据库,
+        必须使用base64.encode将bytes编码成字符串之后才能存入数据库。
+        而在python3中, 可以直接将pickle.dumps的bytestr存入数据库, 这样就省去了base64编码的开销
+        """
+        import sqlite3
+        
+        conn = sqlite3.connect(":memory:")
+        c = conn.cursor()
+        c.execute("CREATE TABLE test (dictionary BLOB) ") # BLOB is byte
+        c.execute("INSERT INTO test VALUES (?)", 
+                  (obj2bytestr({1:"a", 2:"你好"}),))
+        
+        print(c.execute("select * from test").fetchone()) # see what stored in database
+        print(bytestr2obj(c.execute("select * from test").fetchone()[0])) # recovery object from byte str
+
+    @staticmethod
+    def pk_vs_database2():
         import sqlite3
         
         conn = sqlite3.connect(":memory:")
@@ -77,6 +94,10 @@ if __name__ == "__main__":
     Js_unittest.safe_dump_js()
     Pk_unittest.everything()
     Pk_unittest.safe_dump_pk()
-    Pk_unittest.pk_vs_database()
+    Pk_unittest.pk_vs_database1()
+    Pk_unittest.pk_vs_database2()
     
-    clear_residue() 
+    try:
+        clear_residue()
+    except:
+        pass
