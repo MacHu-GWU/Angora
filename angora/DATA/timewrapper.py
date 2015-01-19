@@ -47,7 +47,8 @@ class TimeWrapper(object):
         self.default_date_template = "%Y-%m-%d"     # 日期默认模板
         self.iso_dateformat = "%Y-%m-%d"            # 国际标准模板
         
-        self.datetime_templates = ["%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"]    # 日期时间的模板集合
+        self.datetime_templates = ["%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S",
+                                   "%y%m%d%H", ]    # 日期时间的模板集合
         self.default_datetime_templates = "%Y-%m-%d %H:%M:%S"                   # 日期时间默认模板
         self.iso_datetimeformat = "%Y-%m-%d %H:%M:%S"                           # 国际标准模板
         
@@ -115,6 +116,12 @@ class TimeWrapper(object):
             except:
                 pass
         raise Exception("None template matching '%s'" % datetimestr)
+    
+    def isodatestr(self, datestr):
+        return str(self.str2date(datestr))
+
+    def isodatetimestr(self, datetimestr):
+        return str(self.str2datetime(datetimestr))
     
     """
     在数据库中, 我们经常需要使用:

@@ -5,7 +5,7 @@ import:
     from angora.DBA.SQLITE.sqlitewrapper import iterC, prt_all, stable_insertmany
 """
 
-import sqlite3
+
 
 def iterC(cursor, arraysize = 10):
     "An iterator that uses fetchmany to keep memory usage lower"
@@ -62,8 +62,13 @@ if __name__ == "__main__":
         from math import sqrt
         import random
         import os
-    
-        os.remove("test.db")
+        import sqlite3
+        
+        try:
+            os.remove("test.db")
+        except:
+            pass
+        
         connect = sqlite3.connect("test.db")
         cursor = connect.cursor()
         cursor.execute("CREATE TABLE test (uuid INTEGER, name TEXT, PRIMARY KEY (uuid) );")

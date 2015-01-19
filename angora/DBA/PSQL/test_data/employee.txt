@@ -1,0 +1,5 @@
+employee_id,employee_name,start_date,age,height
+000001,John,1/1/2003,35,1.78
+000002,Mike,1/1/2004,19,1.65
+000003,Bruce,1/1/2001,47,1.73
+000004,Tom,1/1/2002,25,1.76

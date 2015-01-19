@@ -251,7 +251,7 @@ class SearchEngine():
         return self.tables[table_name]
         
     def add_all(self, documents):
-        """往表格中填充数据
+        """往表格中填充数据, 使用的是SqlAlchemy中的Insert
         
         step 1. 往主表格填充数据
             主表格名称是 self.schema.schema_name
@@ -310,6 +310,7 @@ class SearchEngine():
                    
     def search(self, query):
         """根据query进行单元搜索, 返回row
+        使用的是原生sqlite3 API
         """
         main_sqlcmd, main_sqlcmd_select_all, keyword_sqlcmd_list = query.create_sql()
 
