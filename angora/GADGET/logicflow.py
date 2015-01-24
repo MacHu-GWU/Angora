@@ -36,6 +36,7 @@ def timetest(func, howmany=1):
     elapse = timeit.Timer(func).timeit(howmany)
     print("avg = %s, total = %s, times = %s" % (elapse/howmany, elapse, howmany) )
 
+
 if __name__ == "__main__":
     def usage_tryit():
         import random

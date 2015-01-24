@@ -489,10 +489,12 @@ if __name__ == "__main__":
         main_sqlcmd, main_sqlcmd_select_all, keyword_sqlcmd_list = query.create_sql()
         print("\n{:=^100}".format("main_sqlcmd"))
         print(main_sqlcmd)
+        
         print("\n{:=^100}".format("main_sqlcmd_select_all"))
         print(main_sqlcmd_select_all)
-        for sqlcmd in keyword_sqlcmd_list:
-            print("\n{:=^100}".format("keyword_sqlcmd"))
+        
+        print("\n{:=^100}".format("keyword_sqlcmd"))
+        for sqlcmd in keyword_sqlcmd_list:            
             print(sqlcmd)
             
 #     unittest_Query()

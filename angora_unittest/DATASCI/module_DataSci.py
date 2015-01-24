@@ -126,7 +126,7 @@ class Psmatcher_unittest():
         data = pd.read_csv(r"dataset\re78.csv", index_col=0) # read all data
         control, treatment = (data[data["treat"] == 0].values, # split to control and treatment
                               data[data["treat"] == 1].values)
-        
+
         selected_control, selected_control_foreach = psmatcher.psm(control, treatment,
                                                                    use_col = [0, 1, 2, 3, 4, 5], # choose columns for matching
                                                                    stratified_col = [[1],[3],[0,2,4],[5]], k = 1) # define stratified order
@@ -147,21 +147,21 @@ class Stat_unitest():
         print(stat.find_outlier(data) )
             
 if __name__ == "__main__":
-    Knn_unittest.dist()
-    Knn_unittest.knn_find()
-    Knn_unittest.knn_classify()
-
-    Linreg_unittest.linreg_predict()
-    Linreg_unittest.linreg_coef()
-    Linreg_unittest.glance_2d()
-  
-    Preprocess_unittest.prep_standardize()
-    Preprocess_unittest.knn_impute()
-  
-    Psmatcher_unittest.stratified_matching()
+#     Knn_unittest.dist()
+#     Knn_unittest.knn_find()
+#     Knn_unittest.knn_classify()
+#  
+#     Linreg_unittest.linreg_predict()
+#     Linreg_unittest.linreg_coef()
+#     Linreg_unittest.glance_2d()
+#    
+#     Preprocess_unittest.prep_standardize()
+#     Preprocess_unittest.knn_impute()
+#    
+#     Psmatcher_unittest.stratified_matching()
     Psmatcher_unittest.psm()
  
-    Stat_unitest.outlier()
+#     Stat_unitest.outlier()
     
     
     print("COMPLETE")

@@ -12,7 +12,7 @@ from matplotlib.dates import HourLocator, MinuteLocator
 from matplotlib.dates import DateFormatter
 from matplotlib.dates import MO, TU, WE, TH, FR, SA, SU
 
-def plot_one_day(x, y):
+def plot_one_day(x, y, xlabel=None, ylabel=None, title=None):
     """时间跨度为一天
     major tick = every hours
     minor tick = every 15 minutes
@@ -41,8 +41,18 @@ def plot_one_day(x, y):
     plt.ylim([min(y) - (max(y) - min(y) ) * 0.05, 
               max(y) + (max(y) - min(y) ) * 0.05])
     
-    plt.xlabel(str(x[0].date()))
-    
+    if xlabel:
+        plt.xlabel(xlabel)
+    else:
+        plt.xlabel(str(x[0].date()))
+    if ylabel:
+        plt.ylabel(ylabel)
+    else:
+        plt.ylabel("value")
+    if title:
+        plt.title(title)
+    else:
+        pass
     return plt
 
 def plot_one_week(x, y):
