@@ -64,16 +64,34 @@ class Log(object):
         if enable_verbose:
             print("%s<%s><%s>" % ("\t" * indent, index, message) ) # print log info
             
-    def clear_all(self):
-        """
-        [EN]DELETE all log file under #directory
-        [CN]删除log目录下所有的日志文件
-        """
-        cmd = raw_input("Are you sure you want to delete all log file under folder '%s'?\nENTER 'YES' to confirm: " % self.directory)
-        if cmd == "YES":
-            for fname in os.listdir(self.directory):
-                os.remove(os.path.join(self.directory, fname))
-            print("All log file under folder '%s' have been deleted." % self.directory)
+class Messenger():
+    def __init__(self, echo=True):
+        self.echo=echo
+        if self.echo:
+            self.show=self._print_screen
         else:
-            print("DELETE operation canceled.")
+            self.show=self._not_print_screen
             
+    def _print_screen(self, text):
+        print(text)
+        
+    def _not_print_screen(self, text):
+        pass
+
+    def on(self):
+        self.show=self._print_screen
+        
+    def off(self):
+        self.show=self._not_print_screen
+    
+if __name__ == "__main__":
+    def Messenger_test():
+        messenger = Messenger()
+        messenger.show("hello world")
+        messenger.off()
+        messenger.show("hello world")
+        messenger.on()
+        messenger.show("hello world")
+        
+    Messenger_test()
+    

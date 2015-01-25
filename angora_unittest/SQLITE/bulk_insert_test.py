@@ -1,11 +1,6 @@
 ##encoding=utf8
 
-"""
-import:
-    from angora.DBA.SQLITE.sqlitewrapper import iterC, prt_all, stable_insertmany
-"""
-
-
+from __future__ import print_function
 
 def iterC(cursor, arraysize = 10):
     "An iterator that uses fetchmany to keep memory usage lower"
@@ -43,7 +38,13 @@ def stable_insertmany(connect, cursor, sqlcmd, records):
     connect.commit()
 
 if __name__ == "__main__":
-    
+    from angora.GADGET.pytimmer import Timer
+    from angora.DATA.iterable import grouper_list
+    from math import sqrt
+    import sqlite3
+    import random
+    import os
+        
     def bulk_insert_test():
         """
         当待插入的数据中只有少量数据会损害数据完整性时, 如果我们一条条insert and commit会太慢, 而我们又
@@ -57,13 +58,8 @@ if __name__ == "__main__":
         注: sqlite引擎不需要在出错后进行rollback, 所以没有必要在每一次try语句失败后进行rollback, 所以
         该算法的优势体现不出来。为了达到展示算法的目的, 我们强行对每一次insert/insertmany进行commit。
         """
-        from angora.GADGET import timetest
-        from angora.DATA import grouper_list
-        from math import sqrt
-        import random
-        import os
-        import sqlite3
         
+        timer = Timer()
         try:
             os.remove("test.db")
         except:
@@ -97,7 +93,7 @@ if __name__ == "__main__":
                     except:
                         pass
         
-#         timetest(insert1, 1)
+        timer.test(insert1, 1)
         
         def insert2(): # 90.6950388741 seconds
             for record in records:
@@ -107,7 +103,7 @@ if __name__ == "__main__":
                 except:
                     pass
         
-#         timetest(insert2, 1)
+        timer.test(insert2, 1)
         
         def insert3(): # 31.4067297608 seconds
             try:
@@ -126,6 +122,6 @@ if __name__ == "__main__":
                             except:
                                 pass
         
-        timetest(insert3, 1)
+        timer.test(insert3, 1)
         
     bulk_insert_test()
