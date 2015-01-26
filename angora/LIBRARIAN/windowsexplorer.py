@@ -150,12 +150,7 @@ class WinFile(object):
         os.rename(self.abspath,
                   os.path.join(new_dirname, new_fname + self.ext) )
         
-def unittest_winfile():
-    wf = WinFile("windowsexplorer.py")
-    print(wf)
-    
-# unittest_winfile()
-
+        
 class WinDir(object):
     """Windows目录对象, 可以通过 .属性名来访问 绝对路径, 目录总大小, 子目录数量, 子文件数量。
     免去了使用os.path.function的麻烦。并提供了prt_detail()方法直接打印出文件夹的详细信息。
@@ -225,11 +220,6 @@ class WinDir(object):
         os.rename(self.abspath,
                   os.path.join(new_dirname, new_basename) )
 
-def unittest_WinDir():
-    wd = WinDir(r"C:\HSH\PythonWorkspace\py2\py27_projects\HSH-toolbox")
-    wd.prt_detail()
-    
-# unittest_WinDir()
 
 class FileCollections():
     """WinFile的专用容器, 主要用于方便的从文件夹中选取文件, 筛选文件, 并对指定文件集排序。
@@ -371,6 +361,7 @@ class FileCollections():
             print("%s - %s" % (string_SizeInBytes(winfile.size_on_disk), winfile))
         print("\tAbove is all files size greater than %s." % string_SizeInBytes(threshold))
         
+        
 class WinExplorer(object):
     """Windows文件浏览器, 提供了
     iterfolders, iterfiles, itertopfolders, itertopfiles等方法方便地对文件夹或文件进行遍历
@@ -499,95 +490,112 @@ class WinExplorer(object):
             path = self.focus
         return self._itertopfiles(path)
         
-def unittest_FileCollections():
-    entrance = r"C:\HSH\PythonWorkspace\py2\py27_projects\HSH-toolbox"
-    
-    def pythonfile_criterion(winfile): # 定义python文件筛选器
-        if winfile.ext in [".py"]:
-            return True
-        else:
-            return False
+
+if __name__ == "__main__":
+    def unittest_winfile():
+        wf = WinFile("windowsexplorer.py")
+        print(wf)
         
-    ### 测试类的基本功能
-    def basic_test():    
-        fcs = FileCollections()
-        fcs.select_all_from_path(entrance) # 选择所有文件
-        print(fcs.howmany())
+#     unittest_winfile()
 
-        fcs1 = fcs.select(pythonfile_criterion) # 从中选择python文件
-        print(fcs1)
-        print(fcs1.howmany())
-    
-#     basic_test()
-    
-    ### 测试简便的静态方法
-    def static_method_test():
-        fcs_from_folder = FileCollections.from_path(entrance)
-        print("{:=^100}".format("fcs_from_folder"))
-        print(fcs_from_folder.howmany())
+
+    def unittest_WinDir():
+        wd = WinDir(r"C:\HSH\PythonWorkspace\py3\py33_projects\Angora")
+        wd.prt_detail()
         
-        fcs_from_folder_yes, fcs_from_folder_no = FileCollections.from_path_by_criterion(entrance, 
-                                                                                         pythonfile_criterion, 
-                                                                                         True)
-        print("{:=^100}".format("fcs_from_folder_yes"))
-        print(fcs_from_folder_yes.howmany())
-        print("{:=^100}".format("fcs_from_folder_no"))
-        print(fcs_from_folder_no.howmany())
-    
-#     static_method_test()
-    
-    ### 测试使用功能
-    def recipe_test():
-        fcs = FileCollections.from_path(entrance)
-        fcs.print_files_size_greater_than(1000)
-    
-    recipe_test()
-    
-# unittest_FileCollections()
+#     unittest_WinDir()
 
-def unittest_WinExplorer():
-    entrance = r"C:\HSH\PythonWorkspace\py2\py27_projects\HSH-toolbox"
-    we = WinExplorer()
-    we.locate(entrance)
-    
-    def basic_test():
-        print("{:=^100}".format("test scan function"))
-#         we.scan_all() # 扫描目录下的所有文件和目录
-        we.scan_file() # 仅扫描文件
-        print(we.file_collections)
-        we.scan_dir() # 仅扫描目录
-        print(we.dir_collections)
-    
-#     basic_test()
-    
-    ### 测试各种迭代器
-    def iterator_method_test():
-        print("{:=^100}".format("test staticmethod iter all folders"))
-        for path in WinExplorer._iterfolders(entrance):
-            print(path)
-        print("{:=^100}".format("test iter all folders"))
-        for path in we.iterfolders():
-            print(path)
-        print("{:=^100}".format("test staticmethod iter all files"))
-        for path in WinExplorer._iterfiles(entrance):
-            print(path)
-        print("{:=^100}".format("test iter all files"))
-        for path in we.iterfiles():
-            print(path)
 
-        print("{:=^100}".format("test staticmethod iter all top folders"))
-        for path in WinExplorer._itertopfolders(entrance):
-            print(path)
-        print("{:=^100}".format("test iter all top folders"))
-        for path in we.itertopfolders():
-            print(path)
-        print("{:=^100}".format("test staticmethod iter all top files"))
-        for path in WinExplorer._itertopfiles(entrance):
-            print(path)
-        print("{:=^100}".format("test iter all top files"))
-        for path in we.itertopfiles():
-            print(path)
-
-#     iterator_method_test()
+    def unittest_FileCollections():
+        entrance = r"C:\HSH\PythonWorkspace\py3\py33_projects\Angora"
+        
+        def pythonfile_criterion(winfile): # 定义python文件筛选器
+            if winfile.ext in [".py"]:
+                return True
+            else:
+                return False
+            
+        ### 测试类的基本功能
+        def basic_test():    
+            fcs = FileCollections()
+            fcs.select_all_from_path(entrance) # 选择所有文件
+            print(fcs.howmany())
     
-# unittest_WinExplorer()
+            fcs1 = fcs.select(pythonfile_criterion) # 从中选择python文件
+            print(fcs1)
+            print(fcs1.howmany())
+        
+#         basic_test()
+        
+        ### 测试简便的静态方法
+        def static_method_test():
+            fcs_from_folder = FileCollections.from_path(entrance)
+            print("{:=^100}".format("fcs_from_folder"))
+            print(fcs_from_folder.howmany())
+            
+            fcs_from_folder_yes, fcs_from_folder_no = FileCollections.from_path_by_criterion(entrance, 
+                                                                                             pythonfile_criterion, 
+                                                                                             True)
+            print("{:=^100}".format("fcs_from_folder_yes"))
+            print(fcs_from_folder_yes.howmany())
+            print("{:=^100}".format("fcs_from_folder_no"))
+            print(fcs_from_folder_no.howmany())
+        
+#         static_method_test()
+        
+        ### 测试使用功能
+        def recipe_test():
+            fcs = FileCollections.from_path(entrance)
+            fcs.print_files_size_greater_than(1000)
+        
+#         recipe_test()
+        
+#     unittest_FileCollections()
+
+
+    def unittest_WinExplorer():
+        entrance = r"C:\HSH\PythonWorkspace\py2\py27_projects\HSH-toolbox"
+        we = WinExplorer()
+        we.locate(entrance)
+        
+        def basic_test():
+            print("{:=^100}".format("test scan function"))
+            we.scan_all() # 扫描目录下的所有文件和目录
+            we.scan_file() # 仅扫描文件
+            print(we.file_collections)
+            we.scan_dir() # 仅扫描目录
+            print(we.dir_collections)
+        
+#         basic_test()
+        
+        ### 测试各种迭代器
+        def iterator_method_test():
+            print("{:=^100}".format("test staticmethod iter all folders"))
+            for path in WinExplorer._iterfolders(entrance):
+                print(path)
+            print("{:=^100}".format("test iter all folders"))
+            for path in we.iterfolders():
+                print(path)
+            print("{:=^100}".format("test staticmethod iter all files"))
+            for path in WinExplorer._iterfiles(entrance):
+                print(path)
+            print("{:=^100}".format("test iter all files"))
+            for path in we.iterfiles():
+                print(path)
+    
+            print("{:=^100}".format("test staticmethod iter all top folders"))
+            for path in WinExplorer._itertopfolders(entrance):
+                print(path)
+            print("{:=^100}".format("test iter all top folders"))
+            for path in we.itertopfolders():
+                print(path)
+            print("{:=^100}".format("test staticmethod iter all top files"))
+            for path in WinExplorer._itertopfiles(entrance):
+                print(path)
+            print("{:=^100}".format("test iter all top files"))
+            for path in we.itertopfiles():
+                print(path)
+    
+#         iterator_method_test()
+        
+#     unittest_WinExplorer()

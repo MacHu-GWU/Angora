@@ -2,18 +2,20 @@
 
 from __future__ import print_function
 from angora.SQLITE.core import MetaData, Sqlite3Engine, Table, Column, DataType, Row, Select
-from angora.STRING.template import straightline
+from angora.STRING.formatmaster import FormatMaster
 from datetime import date
 from pprint import pprint
 import os
+
+fm = FormatMaster()
 
 try:
     os.remove("movies.db")
 except:
     pass
 
-engine = Sqlite3Engine("movies.db")
-# engine = Sqlite3Engine(":memory:")
+# engine = Sqlite3Engine("movies.db")
+engine = Sqlite3Engine(":memory:")
 conn = engine.connect
 c = engine.cursor
 
@@ -41,7 +43,7 @@ def DataType_unittest():
 # DataType_unittest()
 
 def Column_unittest():
-    print(straightline("column repr"))
+    fm.template._straightline("column repr")
     print("repr(Column) = %s" % repr(col_movie_id))
     print("repr(Column) = %s" % repr(col_title))
     print("repr(Column) = %s" % repr(col_length))
@@ -49,7 +51,7 @@ def Column_unittest():
     print("repr(Column) = %s" % repr(col_release_date))
     print("repr(Column) = %s" % repr(col_genres))
         
-    print(straightline("test column.create_table_sql()"))
+    fm.template._straightline("test column.create_table_sql()")
     print("column.create_table_sql() = %s" % col_movie_id.create_table_sql())
     print("column.create_table_sql() = %s" % col_title.create_table_sql())
     print("column.create_table_sql() = %s" % col_length.create_table_sql())
@@ -57,10 +59,10 @@ def Column_unittest():
     print("column.create_table_sql() = %s" % col_release_date.create_table_sql())
     print("column.create_table_sql() = %s" % col_genres.create_table_sql())
 
-    print(straightline("Column.__dict__"))
+    fm.template._straightline("Column.__dict__")
     pprint(col_movie_id.__dict__)
 
-    print(straightline("test column.__operation__(other)"))
+    fm.template._straightline("test column.__operation__(other)")
     print(col_movie_id == "m0001")
     print(col_length > 120)
     print(col_length < 120)
@@ -81,7 +83,7 @@ def Table_unittest():
     print("Table.__dict__ =")
     pprint(movie.__dict__)
     
-    print(straightline("test table.column"))
+    fm.template._straightline("test table.column")
     print(movie.movie_id.full_name)
     print(movie.title.full_name)
     print(movie.length.full_name)
@@ -150,7 +152,7 @@ def Engine_insert_unittest():
         
         engine.prt_all(movie)
         
-#     test1()
+    test1()
     
     def test2():
         row = Row( ("movie_id", "title"), ("m0001", "Madagascar 2") )
@@ -165,7 +167,7 @@ def Engine_insert_unittest():
         
         engine.prt_all(movie)
 
-    test2()
+#     test2()
     
 # Engine_insert_unittest()
 
@@ -178,16 +180,16 @@ def Select_unittest():
     ins = movie.insert()
     engine.insert_many_records(ins, records)
     
-    print(straightline("test Select object to SQL command"))
+    fm.template._straightline("test Select object to SQL command")
     sel = Select(movie.all).where(movie.length > 100, 
                                   movie.release_date < date(2000, 1, 1)).limit(3)
     print(sel)
     
-    print(straightline("test Select record"))
+    fm.template._straightline("test Select record")
     for record in engine.select(sel):
         print(record)
     
-    print(straightline("test Select row"))
+    fm.template._straightline("test Select row")
     for row in engine.select_row(sel):
         print(row)
         

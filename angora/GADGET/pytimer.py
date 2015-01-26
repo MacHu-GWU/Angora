@@ -1,6 +1,11 @@
 ##encoding=utf8
 
 """
+
+pytimer
+-------
+    一个用于测量代码运行时间的小工具
+
 compatibility: compatible to python2 and python3
 
 prerequisites: None
@@ -23,13 +28,17 @@ class Timer():
         self.st = time.clock()
         
     def stop(self):
+        """return the last measurement elapse time
+        """
         self.elapse = time.clock() - self.st
         return self.elapse
     
     def display(self):
+        """print the last measurement elapse time"""
         print("elapse %0.6f seconds" % self.elapse)
 
     def timeup(self):
+        """print the last measurement elapse time, and return it"""
         elapse = self.stop()
         self.display()
         return elapse
@@ -51,7 +60,8 @@ if __name__ == "__main__":
         for index in range(len(array)):
             array[index]
         elapse = timer.timeup()
-            
+        print(elapse)
+         
     usage_timer()
     
     def usage_timetest():

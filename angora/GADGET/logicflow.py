@@ -32,11 +32,6 @@ def tryit(howmany, func, *argv, **kwarg):
             flag += 1
     raise current_exception
 
-def timetest(func, howmany=1):
-    elapse = timeit.Timer(func).timeit(howmany)
-    print("avg = %s, total = %s, times = %s" % (elapse/howmany, elapse, howmany) )
-
-
 if __name__ == "__main__":
     def usage_tryit():
         import random
@@ -52,18 +47,3 @@ if __name__ == "__main__":
             print(e)
     
 #     usage_tryit()
-
-    def usage_timetest():
-        array = list(range(1000000))
-        def iter_list1():
-            for _ in array:
-                pass
-            
-        def iter_list2():
-            for index in range(len(array)):
-                array[index]
-        
-        timetest(iter_list1, 10)
-        timetest(iter_list2, 10)
-        
-#     usage_timetest()

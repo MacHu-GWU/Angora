@@ -1,34 +1,43 @@
 ##encoding=utf8
 
+"""
+import:
+    from angora.PandasSQL.sqlite3blackhole import Sqlite3BlackHole, CSVFile
+
+"""
 from __future__ import print_function
-from angora.SQLITE.core import MetaData, Sqlite3Engine, Table, Column, DataType, Row, Select
+from angora.SQLITE.core import MetaData, Sqlite3Engine, Table, Column, DataType
 from angora.DATA.timewrapper import TimeWrapper
+from angora.GADGET.logger import Messenger, Log
 from collections import deque
 import pandas as pd, numpy as np
-import sqlite3
-import datetime
 
-tw = TimeWrapper()
-
-class CSV():
+class CSVFile():
+    """a CSV datafile class
+    """
     def __init__(self, path, 
                  table_name = None, 
                  sep = ",",
                  usecols = None,
                  dtype = dict(), 
-                 primary_key_name = None):
+                 primary_key_columns = None):
         self.path = path
         self.table_name = table_name
         self.sep = sep
         self.usecols = usecols
         self.dtype = dtype
-        self.primary_key_name = primary_key_name
-    
+        self.primary_key_columns = primary_key_columns
+        
         self._read_metadata()
+        self.timewrapper = None
         
     def _read_metadata(self):
+        """construct the metadata for creating the database table
+        """
         self.metadata = MetaData()
         datatype = DataType()
+        
+        ### map the CSV.dtype definition to pandas.read_csv dtype and sqlite3 dtype
         _pd_dtype_mapping = {"TEXT": np.str, "INTEGER": np.int64, 
                              "REAL": np.float64,
                              "DATE": np.str, "DATETIME": np.str}
@@ -44,7 +53,7 @@ class CSV():
             if data_type in _db_dtype_mapping:
                 db_dtype[column_name] = _db_dtype_mapping[data_type]        
         
-        ### Read column information from csv
+        ### Read one row, and extract column information from csv
         if self.usecols:
             df = pd.read_csv(self.path, sep=self.sep, nrows=1, dtype=pd_dtype, usecols=self.usecols)
         else:
@@ -66,7 +75,7 @@ class CSV():
         ### Construct Database.Table Metadata
         columns = list()
         for column_name, data_type in zip(df.columns, df.dtypes):
-            if column_name in self.primary_key_name:
+            if column_name in self.primary_key_columns:
                 primary_key_flag = True
             else:
                 primary_key_flag = False
@@ -76,6 +85,8 @@ class CSV():
         self.table = self.metadata.tables[self.table_name]
     
     def generate_records(self, chunksize=1000*1000):
+        """generator for sqlite3 database friendly record from a data file
+        """
         if self.usecols:
             for df in pd.read_csv(self.path, 
                                   sep=self.sep, 
@@ -84,10 +95,10 @@ class CSV():
                                   iterator=True, 
                                   chunksize=chunksize):
                 for column_name, dtype in self.db_dtype.items(): # 修改Date和DateTime列的dtype
-                    if dtype.name == "DATE": # 标准化为字符串
-                        df[column_name] = df[column_name].apply(tw.isodatestr)
-                    if dtype.name == "DATETIME": # 标准化为字符串
-                        df[column_name] = df[column_name].apply(tw.isodatetimestr)
+                    if dtype.name == "DATE": # 转换为 datestr
+                        df[column_name] = df[column_name].apply(self.timewrapper.isodatestr)
+                    if dtype.name == "DATETIME": # 转换为 datetimestr
+                        df[column_name] = df[column_name].apply(self.timewrapper.isodatetimestr)
                         
                 for record in df.values:
                     yield record
@@ -98,93 +109,61 @@ class CSV():
                                   iterator=True, 
                                   chunksize=chunksize):
                 for column_name, dtype in self.db_dtype.items(): # 修改Date和DateTime列的dtype
-                    if dtype.name == "DATE": # 标准化为字符串
-                        df[column_name] = df[column_name].apply(tw.isodatestr)
-                    if dtype.name == "DATETIME": # 标准化为字符串
-                        df[column_name] = df[column_name].apply(tw.isodatetimestr)
-                        
+                    if dtype.name == "DATE": # 转换为 datestr
+                        df[column_name] = df[column_name].apply(self.timewrapper.isodatestr)
+                    if dtype.name == "DATETIME": # 转换为 datetimestr
+                        df[column_name] = df[column_name].apply(self.timewrapper.isodatetimestr)
+                
                 for record in df.values:
                     yield record
                     
-class SqliteBlackHole():
+class Sqlite3BlackHole():
     def __init__(self, dbname):
         self.engine = Sqlite3Engine(dbname)
         self.metadata = MetaData()
         self.pipeline = deque()
+        self.timewrapper = TimeWrapper()
+        self.messenger = Messenger()
+        self.log = Log()
         
     def add(self, datafile):
+        """add datafile object to data pipeline
+        """
+        datafile.timewrapper = self.timewrapper
         self.pipeline.append(datafile)
         
-    def devour_all(self):
+    def devour(self):
+        """if sqlite3.IntegrityError been raised, skip the record.
+        """
         while len(self.pipeline) >= 1:
-            print("W")
+            self.messenger.show("%s files to process..." % len(self.pipeline))
             datafile = self.pipeline.popleft()
+            self.messenger.show("now processing %s..." % datafile.path)
             datafile.metadata.create_all(self.engine)
             
-            ins = datafile.table.insert()
-            self.engine.insert_many_records(ins, datafile.generate_records())
-            pass
+            try:
+                ins = datafile.table.insert()
+                # insert only, if failed, do nothing
+                self.engine.insert_many_records(ins, datafile.generate_records())
+                self.messenger.show("\tfinished!")
+            except:
+                self.log.write(datafile.path)
+    
+    def update(self):
+        """unlike Sqlite3BlackHole.devour(), if sqlite3.IntegrityError been raised, 
+        update the record.
+        """
+        while len(self.pipeline) >= 1:
+            self.messenger.show("%s files to process..." % len(self.pipeline))
+            datafile = self.pipeline.popleft()
+            self.messenger.show("now processing %s..." % datafile.path)
+            datafile.metadata.create_all(self.engine)
             
-            
-# f = CSV(r"test_data/employee.txt",
-#         table_name="employee",
-#         sep=",",
-#         dtype={"employee_id": "TEXT", "start_date": "DATE"},
-#         primary_key_name=["employee_id"])
-# 
-# for record in f.generate_records():
-#     print(record)
+            try:
+                ins = datafile.table.insert()
+                # insert and update
+                self.engine.insert_and_update_many_records(ins, datafile.generate_records())
+                self.messenger.show("\tfinished!")
+            except:
+                self.log.write(datafile.path)
 
-if __name__ == "__main__":
-    def main():
-        bh = SqliteBlackHole("test.db")
-        advertisement = CSV(r"test_data/advertisement.txt",
-                            table_name="advertisement",
-                            sep=",",
-                            dtype={"id": "TEXT", "hour": "DATETIME"},
-                            primary_key_name=["id"])
-        employee = CSV(r"test_data/employee.txt",
-                table_name="employee",
-                sep=",",
-                dtype={"employee_id": "TEXT", "start_date": "DATE"},
-                primary_key_name=["employee_id"])
-
-        bh.add(advertisement)
-        bh.add(employee)
-        bh.devour_all()
-        
-        bh.engine.prt_howmany(advertisement.table)
-        bh.engine.prt_howmany(employee.table)
-    main()
-        
-# conn = sqlite3.connect(":memory:")
-# c = conn.cursor()
-# c.execute("CREATE TABLE test (aaa INTEGER, bbb TEXT, ccc DATETIME, ddd INTEGER, eee REAL);")
-# 
-#         
-#         
-# df = pd.read_csv(r"test_data/employee.txt", parse_dates=[2])    
-# print(df.dtypes)
-# 
-# df["start_date"] = df["start_date"].apply(pd.tslib.Timestamp.to_datetime)
-# 
-# print(df.dtypes)
-# 
-# for _, row in df.iterrows():
-#     value = row["start_date"]
-#     print(value)
-#     print(type(value))
-#     print(type(value.to_pydatetime()))
-#     print(type(value.date()))
-#     
-#     break
-#     
-# print(c.execute("SELECT * FROM test").fetchall())
-
-
-# print(value, value.date(), str(value), type(value))
-# if __name__ == "__main__":
-#     
-#     df = pd.read_csv(r"test_data/employee.txt")
-#     print(df)
-#     f = CSV(r"test_data/employee.txt", table_name="employee", sep=",", )

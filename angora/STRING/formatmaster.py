@@ -7,6 +7,27 @@ import:
 
 from __future__ import print_function
 
+
+class Template():
+    """用于从模板产生字符串, 或者直接打印产生的字符串
+    以 "_" 开头的方法都是直接打印产生的字符串
+    """
+    def straightline(self, title, length = 100, linestyle = "="):
+        """长度为length, 中间文字是title, 线型是linestyle"""
+        text = "{:%s^%s}" % (linestyle, length)
+        return text.format(title)
+
+    def _straightline(self, title, length = 100, linestyle = "="):
+        print(self.straightline(title = title, length = length, linestyle = linestyle))
+
+    def pad_indent(self, text, num_of_indent = 1):
+        """在text文字之前, 填充num_of_indent个制表符tab"""
+        return "%s%s" % ("\t"*num_of_indent, text)
+
+    def _pad_indent(self, text, num_of_indent = 1):
+        print(self.pad_indent(text = text, num_of_indent = num_of_indent))
+
+
 class Converter():
     def person_name_formatter(self, text):
         """将字符串转换为首字母大写, 其他字母小写的, 非严格英文句子格式。单词之间的空格会被标准化为长度1。
@@ -71,13 +92,15 @@ class Converter():
             # 按照空格拆分单词, 多个空格按一个空格对待
             chunks = [chunk for chunk in text.split(" ") if len(chunk)>=1]
             return "_".join(chunks)
-    
+        
+        
 class FormatMaster():
     """字符串格式转换器
     """
     def __init__(self):
+        self.template = Template()
         self.converter = Converter()
-    
+        
     def convert(self, converter, text):
         return converter(text)
     
@@ -88,33 +111,44 @@ class FormatMaster():
         return {converter(text) for text in set_of_text}
 
 if __name__ == "__main__":
-    def unittest_FormatMaster():
-        fm = FormatMaster()
-        
+    fm = FormatMaster()
+
+    def FormatMaster_Template_unittest():
+        print(fm.template.straightline("straight line", 60, "-"))
+        fm.template._straightline("straight line", 60, "-")
+
+        print(fm.template.pad_indent("some message", 2))
+        fm.template._pad_indent("some message", 2)
+         
+    FormatMaster_Template_unittest()
+    
+    def FormatMaster_Converter_unittest():
         testdata = [
                     " do you want   to build  a snow man? ",
                     "",
                     "   Michael Jackson",
                     "Boom! "
                     ]
-    
-        print("{:=^100}".format("person_name_formatter"))
+        
+        fm.template._straightline("person_name_formatter")
         for text in testdata:
             print("[%s]=>[%s]" %(text, fm.convert(fm.converter.person_name_formatter, text) ) )
     
-        print("{:=^100}".format("sentence_formatter"))
+        fm.template._straightline("sentence_formatter")
         for text in testdata:
             print("[%s]=>[%s]" %(text, fm.convert(fm.converter.sentence_formatter, text) ) )
         
-        print("{:=^100}".format("title_formatter"))
+        fm.template._straightline("title_formatter")
         for text in testdata:
             print("[%s]=>[%s]" %(text, fm.convert(fm.converter.title_formatter, text) ) )
             
-        print("{:=^100}".format("tag_formatter"))
+        fm.template._straightline("tag_formatter")
         for text in testdata:
             print("[%s]=>[%s]" %(text, fm.convert(fm.converter.tag_formatter, text) ) )
         
-        print("{:=^100}".format("batch_process"))
-        print(fm.convert_list(fm.converter.person_name_formatter, testdata))
+        fm.template._straightline("batch_process")
+        print("%s => %s" % (testdata, 
+                            fm.convert_list(fm.converter.person_name_formatter, testdata) ) )
         
-    unittest_FormatMaster()
+    FormatMaster_Converter_unittest()
+    

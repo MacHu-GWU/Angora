@@ -6,15 +6,10 @@ Table
 Columns
 """
 
-try:
-    from .wrapper import iterC
-except:
-    from wrapper import iterC
+from .wrapper import iterC
 from collections import OrderedDict
-import datetime
 import sqlite3
 import pickle
-import base64
 
 def obj2bytestr(obj):
     """convert arbitrary object to database friendly bytestr"""
@@ -24,17 +19,16 @@ def bytestr2obj(bytestr):
     """recovery object from bytestr"""
     return pickle.loads(bytestr)
 
-def obj2str(obj):
-    """convert arbitrary object to database friendly string, using base64encode algorithm"""
-    return base64.b64encode(pickle.dumps(obj))
+def bytestr2hexstring(bytestr):
+    """convert byte string to hex string, for example
+    b'\x80\x03]q\x00(K\x01K\x02K\x03e.'  to  X'80035d7100284b014b024b03652e'
+    """
+    res = list()
+    for i in bytestr:
+        res.append(str(hex(i))[2:].zfill(2))
+    return "".join(res)
 
-def str2obj(textstr):
-    """recovery object from base64 encoded string"""
-    return pickle.loads(base64.b64decode(textstr))
-
-# sqlite3.register_adapter(Point, adapt_point)
-# sqlite3.register_converter("point", convert_point)
-
+### === Row class ===
 class Row():
     """
     """
@@ -65,7 +59,8 @@ class Row():
         if not self.dictionary_view:
             self._create_dict_view()
         return self.dictionary_view[attr]
-    
+
+### === Insert class ===
 class Insert():
     def __init__(self, table):
         self.table = table
@@ -116,7 +111,7 @@ class Insert():
         new_record = list()
         for column, item in zip(self.table.columns.values(), record):
             if column.is_pickletype:
-                new_record.append(obj2str(item))
+                new_record.append(obj2bytestr(item))
             else:
                 new_record.append(item)
         return tuple(new_record)
@@ -132,17 +127,18 @@ class Insert():
         new_record = list()
         for column, item in zip(row.columns, row.values):
             if self.table.columns[column].is_pickletype:
-                new_record.append(obj2str(item))
+                new_record.append(obj2bytestr(item))
             else:
                 new_record.append(item)
         return tuple(new_record)
 
+### === Update class ===
 class _Update_config():
     """用于判断每个列上的值是绝对更新还是相对更新
     """
     def __init__(self, sqlcmd):
         self.sqlcmd = sqlcmd
-        
+
 class Update():
     def __init__(self, table):
         self.table = table
@@ -193,6 +189,7 @@ class Update():
                                                    self.set_clause, 
                                                    self.where_clause] if i])
 
+### === Select class ===
 class Select():
     def __init__(self, columns):
         self.columns = columns
@@ -223,6 +220,7 @@ class Select():
                                         self.limit_clause] if i ])
     
     def toSQL(self):
+        """return the SELECT SQL command"""
         return str(self)
 
     ### record converter to change the record to sqlite3 friendly tuple
@@ -237,11 +235,12 @@ class Select():
         new_record = list()
         for column, item in zip(self.columns, record):
             if column.is_pickletype:
-                new_record.append(str2obj(item))
+                new_record.append(bytestr2obj(item))
             else:
                 new_record.append(item)
         return tuple(new_record)
 
+### === MetaData class ===
 class MetaData():
     def __init__(self, bind=None):
         self.bind = bind
@@ -252,16 +251,14 @@ class MetaData():
             create_table_sqlcmd = table.create_table_sql()
             try:
                 engine.cursor.execute(create_table_sqlcmd)
-            except:
-                pass
+            except Exception as e:
+                print(e)
             
     def reflect(self, engine):
         import sqlalchemy
         SAengine = sqlalchemy.create_engine("sqlite:///%s" % engine.dbname, echo=False)
         meta = sqlalchemy.MetaData()
         meta.reflect(bind=SAengine)
-#         print(meta.__dict__)
-#         print(meta.tables["movie"].columns["genres"].__dict__)
         
         dtype_mapping = {"TEXT": TEXT(), "INTEGER": INTEGER(), "REAL": REAL(), "DATE": DATE(),
                          "DATETIME": DATETIME(), "BLOB": PICKLETYPE(),}
@@ -283,21 +280,8 @@ class MetaData():
                                           primary_key=column.primary_key,
                                           nullable=column.nullable,))
             table = Table(table.name, self, *columns)
-            
-#                 col_genres = Column("genres", datatype.pickletype, default=set())
-#                 print(column.__dict__)
-#                 print(column.name)
-#                 print(column.type)
-#                 print(column.primary_key)
-#                 print(column.nullable)
-#                 try:
-#                     print(column.server_default.__dict__)
-#                     print([eval(column.server_default.arg.text)])
-#                 except:
-#                     pass
-#                 break
-            
-        
+
+### === DataType class ===
 class BaseDataType():
     """所有数据类型的父类
     """
@@ -327,6 +311,22 @@ class DATETIME(BaseDataType):
     name = "DATETIME"
     sqlite_dtype_name = "DATETIME"
     
+class PYTHONLIST(BaseDataType):
+    name = "PYTHONLIST"
+    sqlite_dtype_name = "PYTHONLIST"
+    
+class PYTHONSET(BaseDataType):
+    name = "PYTHONSET"
+    sqlite_dtype_name = "PYTHONSET"
+   
+class PYTHONDICT(BaseDataType):
+    name = "PYTHONDICT"
+    sqlite_dtype_name = "PYTHONDICT"
+    
+class ORDEREDDICT(BaseDataType):
+    name = "ORDEREDDICT"
+    sqlite_dtype_name = "ORDEREDDICT"
+    
 class PICKLETYPE(BaseDataType):
     name = "PICKLETYPE"
     sqlite_dtype_name = "BLOB"
@@ -340,8 +340,45 @@ class DataType():
     real = REAL()
     date = DATE()
     datetime = DATETIME()
+    pythonlist = PYTHONLIST()
+    pythonset = PYTHONSET()
+    pythondict = PYTHONDICT()
     pickletype = PICKLETYPE()
-    
+
+### === DataType sqlite3 converter ===
+def adapt_list(_LIST):
+    """类 -> 字符串 转换"""
+    return obj2bytestr(_LIST)
+
+def convert_list(_STRING):
+    """字符串 -> 类 转换"""
+    return bytestr2obj(_STRING)
+
+def adapt_set(_SET):
+    """类 -> 字符串 转换"""
+    return obj2bytestr(_SET)
+
+def convert_set(_STRING):
+    """字符串 -> 类 转换"""
+    return bytestr2obj(_STRING)
+
+def adapt_dict(_DICT):
+    """类 -> 字符串 转换"""
+    return obj2bytestr(_DICT)
+
+def convert_dict(_STRING):
+    """字符串 -> 类 转换"""
+    return bytestr2obj(_STRING)
+
+def adapt_ordereddict(_ORDEREDDICT):
+    """类 -> 字符串 转换"""
+    return obj2bytestr(_ORDEREDDICT)
+
+def convert_ordereddict(_STRING):
+    """字符串 -> 类 转换"""
+    return bytestr2obj(_STRING)
+
+### === Column class ===
 class Column():
     def __init__(self, column_name, data_type, primary_key=False, nullable=True, default=None):
         if column_name in ["table_name", "columns", "primary_key_columns", "pickletype_columns", "all"]:
@@ -404,7 +441,7 @@ class Column():
     def _sql_PICKLETYPE(self, value):
         """if it is python object, in sql command we convert it to byte string, like 'gx4=fjl82d...'
         """
-        return repr(obj2str(value).decode())
+        return "X'%s'" % bytestr2hexstring(obj2bytestr(value))
     
     def create_table_sql(self):
         """generate the definition part of 'CREATE TABLE (...)' SQL command
@@ -470,7 +507,7 @@ class Column():
     def __neg__(self):
         return _Update_config("+ %s" % self.column_name)
     
-
+### === Table class ===
 class Table(): 
     def __init__(self, table_name, metadata, *args):
         self.table_name = table_name
@@ -540,11 +577,22 @@ class Table():
         """create a Update object
         """
         return Update(self)
-        
+
+### === Sqlite3Engine class ===
 class Sqlite3Engine():
     def __init__(self, dbname, autocommit=True):
         self.dbname = dbname
-        self.connect = sqlite3.connect(dbname)
+
+        sqlite3.register_adapter(list, adapt_list)
+        sqlite3.register_converter("PYTHONLIST", convert_list)
+        sqlite3.register_adapter(set, adapt_set)
+        sqlite3.register_converter("PYTHONSET", convert_set)
+        sqlite3.register_adapter(dict, adapt_dict)
+        sqlite3.register_converter("PYTHONDICT", convert_dict)
+        sqlite3.register_adapter(OrderedDict, adapt_ordereddict)
+        sqlite3.register_converter("ORDEREDDICT", convert_ordereddict)
+        
+        self.connect = sqlite3.connect(dbname, detect_types=sqlite3.PARSE_DECLTYPES)
         self.cursor = self.connect.cursor()
         
         if self.autocommit:
@@ -683,13 +731,13 @@ class Sqlite3Engine():
         for record in iterC(self.cursor):
             print(record)
             counter += 1
-        print("Found %s records" % counter)
+        print("Found %s records in %s" % (counter, table.table_name))
     
     def prt_howmany(self, table):
         """打印表内有多少条记录
         """
         self.cursor.execute("SELECT COUNT(*) FROM (SELECT * FROM %s);" % table.table_name)
-        print("Found %s records" % self.cursor.fetchone()[0])
+        print("Found %s records in %s" % (self.cursor.fetchone()[0], table.table_name))
         
     def execute(self, *args, **kwarg):
         return self.cursor.execute(*args, **kwarg)
@@ -703,3 +751,4 @@ class Sqlite3Engine():
         """method for doing nothing
         """
         pass
+    

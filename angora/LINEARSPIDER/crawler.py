@@ -10,7 +10,6 @@ prerequisites: requests
 
 import:
     from angora.LINEARSPIDER.crawler import Crawler, ProxyManager
-    
 """
 
 from __future__ import print_function
@@ -18,12 +17,10 @@ from bs4 import BeautifulSoup as BS4
 try: # if doens't have pandas, ProxyManager will not work
     import pandas as pd
 except:
-    pass
+    pass    
 import requests
 import random
-import itertools
 import sys
-import os
 
 is_py2 = (sys.version_info[0] == 2)
 if is_py2:

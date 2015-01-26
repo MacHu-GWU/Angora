@@ -2,17 +2,19 @@
 
 from angora.SQLITE.core import MetaData, Sqlite3Engine, Table, Column, DataType, Row, Select
 from angora.SQLITE.wrapper import iterC
-from angora.STRING.template import straightline
+from angora.STRING.formatmaster import FormatMaster
 from angora.GADGET.pytimer import Timer
 import random
 import os
 
+fm = FormatMaster()
 try:
     os.remove("performance.db")
 except:
     pass
 
-engine = Sqlite3Engine("performance.db")
+# engine = Sqlite3Engine("performance.db")
+engine = Sqlite3Engine(":memory:")
 conn = engine.connect
 c = engine.cursor
 
@@ -82,6 +84,8 @@ def insert_test4(): # 0.01 - 0.03 second
 # insert_test4()
 
 def insert_and_update_test(): # 0.78 - 0.9 seconds
+    """test insert and update
+    """
     engine.insert_many_records(ins, records)
     # create some new data
     new_records = [(i, "1234") for i in range(100)] + [(i, "6789") for i in range(900, 1000)]
@@ -90,7 +94,7 @@ def insert_and_update_test(): # 0.78 - 0.9 seconds
     timer.timeup()
 #     engine.prt_all(test)
     
-insert_and_update_test()
+# insert_and_update_test()
 
 def select_test1():
     """
@@ -111,7 +115,7 @@ def select_test1():
         pass
     timer.timeup()
 
-# select_test1()
+select_test1()
 
 def update_test1():
     engine.insert_many_records(ins, records)

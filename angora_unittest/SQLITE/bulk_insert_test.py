@@ -38,7 +38,7 @@ def stable_insertmany(connect, cursor, sqlcmd, records):
     connect.commit()
 
 if __name__ == "__main__":
-    from angora.GADGET.pytimmer import Timer
+    from angora.GADGET.pytimer import Timer
     from angora.DATA.iterable import grouper_list
     from math import sqrt
     import sqlite3
@@ -81,21 +81,9 @@ if __name__ == "__main__":
     
         records = [(i, "abcdefghijklmnopqrstuvwxyz") for i in range(1, complexity**2 + 1)]
         
-        def insert1(): # 84.9063365154 seconds
-            try:
-                cursor.executemany("INSERT INTO test VALUES (?,?);", records)
-                connect.commit()
-            except:
-                for record in records:
-                    try:
-                        cursor.execute("INSERT INTO test VALUES (?,?);", record )
-                        connect.commit()
-                    except:
-                        pass
-        
-        timer.test(insert1, 1)
-        
-        def insert2(): # 90.6950388741 seconds
+        def insert1(): # 90.7 seconds/0.9448 seconds, 100/10 complexity
+            """尝试插入一条commit一条
+            """
             for record in records:
                 try:
                     cursor.execute("INSERT INTO test VALUES (?,?);", record )
@@ -103,9 +91,12 @@ if __name__ == "__main__":
                 except:
                     pass
         
-        timer.test(insert2, 1)
+#         timer.test(insert1, 1)
         
-        def insert3(): # 31.4067297608 seconds
+        def insert2(): # 31.4067297608 seconds/0.38 seconds, 100/10 complexity
+            """尝试把大数据包分拆成 size = sqft(len(data)) 大小的小包, 再尝试将小包整包insert, 如果
+            不成功, 则逐条插入
+            """
             try:
                 cursor.executemany("INSERT INTO test VALUES (?,?);", records)
                 connect.commit()
@@ -122,6 +113,31 @@ if __name__ == "__main__":
                             except:
                                 pass
         
+#         timer.test(insert2, 1)
+        
+        def insert3(): # 8.67 seconds
+            """连续两次分拆数据包, 尝试进一步优化速度
+            """
+            try:
+                cursor.executemany("INSERT INTO test VALUES (?,?);", records)
+                connect.commit()
+            except:
+                for chunk in grouper_list(records, int(sqrt(len(records)))):
+                    try:
+                        cursor.executemany("INSERT INTO test VALUES (?,?);", chunk)
+                        connect.commit()
+                    except:
+                        for smaller_chunk in grouper_list(chunk, int(sqrt(len(chunk)))):
+                            try:
+                                cursor.executemany("INSERT INTO test VALUES (?,?);", smaller_chunk)
+                                connect.commit()
+                            except:
+                                for record in smaller_chunk:
+                                    try:
+                                        cursor.execute("INSERT INTO test VALUES (?,?);", record )
+                                        connect.commit()
+                                    except:
+                                        pass
         timer.test(insert3, 1)
         
     bulk_insert_test()

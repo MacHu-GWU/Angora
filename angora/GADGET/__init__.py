@@ -1,5 +1,5 @@
 ##encoding=utf8
 
-from .logger import Log
-from .logicflow import tryit, timetest
+from .logger import Messenger, Log
+from .logicflow import tryit
 from .pytimer import Timer

@@ -1,12 +1,5 @@
 ##encoding=utf8
 
-"""
-[En]If you run this file as the main script.
-    Then package "HSH" will be installed for all Python version you have installed
-[Cn]将本脚本作为主脚本运行，会把本脚本所在的package安装到所有用户已安装的python版本的
-    site-packages下。不支持需要C预编译文件的库。
-"""
-
 from __future__ import print_function
 try:
     from .scheduler import Scheduler
@@ -15,3 +8,8 @@ try:
     from angora.DATA.pk import load_pk, dump_pk, safe_dump_pk, obj2str, str2obj
 except:
     pass
+
+# __all__ = [
+#            "scheduler",
+#            "crawler",
+#            ]
