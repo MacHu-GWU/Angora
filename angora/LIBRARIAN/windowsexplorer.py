@@ -115,6 +115,7 @@ class WinFile(object):
         """
         self.dirname, self.basename = os.path.split(self.abspath) # 目录名, 文件名
         self.fname, self.ext = os.path.splitext(self.basename) # 纯文件名, 文件扩展名
+        self.ext = self.ext.lower()
         
         self.size_on_disk = os.path.getsize(self.abspath)
         self.atime = os.path.getatime(self.abspath) # 接触时间

@@ -104,7 +104,7 @@ def Row_unittest():
     print(row.movie_id)
     print(row["title"])
     
-# Row_unittest()
+Row_unittest()
 
 def Insert_unittest():
     record = ("m0001", "Yes Man!", 95, 6.3, "2010-01-01", {"Drama", "Fantasy"})

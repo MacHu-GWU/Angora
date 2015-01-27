@@ -1,10 +1,15 @@
-##encoding=utf8
+#PandasSQL tutorial
+------
+PandasSQL is a light and powerful tools to load data from csv file and save to database.
 
-from __future__ import print_function
-from angora.PandasSQL.sqlite3blackhole import Sqlite3BlackHole, CSVFile
+###Define database
 
-def main():
-    bh = Sqlite3BlackHole(":memory:") # define database
+	from angora.PandasSQL.sqlite3blackhole import Sqlite3BlackHole, CSVFile
+	bh = Sqlite3BlackHole(":memory:") # define database
+
+###Define csv file
+	
+	### you can also use for loop to easily define mutiple files
     # define first file
     advertisement = CSVFile(r"test_data/advertisement.txt", # path
                             table_name="advertisement", # table_name
@@ -19,11 +24,14 @@ def main():
                        dtype={"employee_id": "TEXT", "start_date": "DATE"},
                        primary_key_columns=["employee_id"])
 
-    bh.add(advertisement)
+###Read data
+
+    bh.add(advertisement) # add file to pipeline
     bh.add(employee)
-    bh.update()
-    
-    bh.engine.prt_howmany(advertisement.table)
-    bh.engine.prt_howmany(employee.table)
-        
-main()
+
+	bh.devour() # this will insert everything into database
+    ## bh.update() # this will execute insert & update process
+	
+	### DONE!!!
+
+Then it's already in your database

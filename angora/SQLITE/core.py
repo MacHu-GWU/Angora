@@ -252,7 +252,8 @@ class MetaData():
             try:
                 engine.cursor.execute(create_table_sqlcmd)
             except Exception as e:
-                print(e)
+                pass
+#                 print(e)
             
     def reflect(self, engine):
         import sqlalchemy

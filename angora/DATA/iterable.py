@@ -111,8 +111,10 @@ def cycle_slice(LIST, start, end): # 测试阶段, 不实用
         return LIST[start:] + LIST[:end+1]
                 
 if __name__ == "__main__":
-    from angora.GADGET import timetest
+    from angora.GADGET.pytimer import Timer
     import time
+    
+    timer = Timer()
     def test_flatten():
         """测试flatten的性能
         """
@@ -195,11 +197,26 @@ if __name__ == "__main__":
             print(chunk_d)
             
         print("=== test for grouper_list ===")
-        b = range(10) # test grouper_dict
-        for chunk_l in grouper_list(b, 3):
-            print(chunk_l)
-            
-#     test_grouper_dict_list()
+        complexity = 1000000
+        
+        timer.start()
+        b = range(complexity) # test grouper_dict
+        for chunk_l in grouper_list(b, 1000):
+#             print(chunk_l)
+            pass
+        timer.timeup()
+        
+        timer.start()
+        chunk_l = list()
+        for i in b:
+            chunk_l.append(i)
+            if len(chunk_l) == 1000:
+#                 print(chunk_l)
+                chunk_l = list()
+#         print(chunk_l)
+        timer.timeup()
+        
+    test_grouper_dict_list()
 
     def timetest_grouper():
         array = [[1,2,3] for _ in range(1000)]
@@ -213,8 +230,8 @@ if __name__ == "__main__":
                 for item in chunk_l:
                     pass
                 
-        timetest(regular, 1000)
-        timetest(use_grouper, 1000)
+        timer.test(regular, 1000)
+        timer.test(use_grouper, 1000)
         
 #     timetest_grouper()
     
