@@ -135,6 +135,12 @@ class Insert():
 ### === Update class ===
 class _Update_config():
     """用于判断每个列上的值是绝对更新还是相对更新
+    由于UPDATE语法中相对更新的情况下会出现下面的情况:
+        UPDATE table_name SET column_name1 = column_name2 + 1 WHERE...
+    所以对于Column对象, 我们定义了 __add__ 等运算符方法, 将 Column + 数值 定义为返回一个_Update_config
+    对象。这样在 Update.values(**kwarg) 方法中我们就可以将 Column + 数值 作文sql字符串进行输入了
+    
+    目前只支持 column 和 数值进行运算, 并且只能有两项
     """
     def __init__(self, sqlcmd):
         self.sqlcmd = sqlcmd
@@ -155,14 +161,17 @@ class Update():
         """
         res = list()
         for column_name, value in kwarg.items():
-            column = self.table.columns[column_name]
-            try: # 处理相对更新
-                res.append("%s = %s" % (column.column_name, 
-                                        value.sqlcmd ) ) # 直接使用
-            except: # 处理绝对更新
-                res.append("%s = %s" % (column.column_name, 
-                                        column.__SQL__(value) ) ) # 将 = value 中 value 的部分处理
-                
+            if value == None:
+                res.append("%s = %s" % (column_name, "NULL"))
+            else:
+                column = self.table.columns[column_name]
+                try: # 处理相对更新
+                    res.append("%s = %s" % (column.column_name, 
+                                            value.sqlcmd ) ) # 直接使用
+                except: # 处理绝对更新
+                    res.append("%s = %s" % (column.column_name, 
+                                            column.__SQL__(value) ) ) # 将 = value 中 value 的部分处理
+            
         self.set_clause = "SET\n\t%s" % ",\n\t".join(res)
         return self
     
@@ -252,8 +261,7 @@ class MetaData():
             try:
                 engine.cursor.execute(create_table_sqlcmd)
             except Exception as e:
-                pass
-#                 print(e)
+                print(e)
             
     def reflect(self, engine):
         import sqlalchemy
@@ -674,6 +682,7 @@ class Sqlite3Engine():
         except TypeError:
             self._insert_many_rows_list_mode(insert_obj, rows)
     
+    ### === insert and update ===
     def insert_and_update_many_records(self, insert_obj, records):
         update_obj = insert_obj.table.update()
         insert_obj.sqlcmd_from_record()
@@ -682,7 +691,7 @@ class Sqlite3Engine():
             try: # try insert
                 self.cursor.execute(insert_obj.insert_sqlcmd, 
                                     insert_obj.default_record_converter(record))
-            except sqlite3.IntegrityError: # 
+            except sqlite3.IntegrityError:
                 values_kwarg = dict() # update.values()'s argument
                 where_args = list() # update.values().where()'s argument
                  
@@ -692,6 +701,30 @@ class Sqlite3Engine():
                     values_kwarg[column_name] = value # fill in values dictionary
                     if column.primary_key: # use primary_key value to locate the row to update
                         where_args.append( column == value)
+                
+                # update one
+                self.update( update_obj.values(**values_kwarg).where(*where_args) )
+                
+        self._commit()
+
+    def insert_and_update_many_rows(self, insert_obj, rows):
+        update_obj = insert_obj.table.update()
+        
+        for row in rows: # try insert one by one
+            try: # try insert
+                insert_obj.sqlcmd_from_row(row)
+                self.cursor.execute(insert_obj.insert_sqlcmd, insert_obj.default_row_converter(row))
+                
+            except sqlite3.IntegrityError:
+                values_kwarg = dict() # update.values()'s argument
+                where_args = list() # update.values().where()'s argument
+                
+                for column_name, value in zip(row.columns, row.values):
+                    column = update_obj.table.columns[column_name]
+                    values_kwarg[column_name] = value # fill in values dictionary
+                    if column.primary_key:
+                        where_args.append( column == value)
+                
                 # update one
                 self.update( update_obj.values(**values_kwarg).where(*where_args) )
                 
@@ -713,6 +746,8 @@ class Sqlite3Engine():
     
     ### === Update ===
     def update(self, update_obj):
+        """更新数据
+        """
         update_obj.sqlcmd()
         self.cursor.execute(update_obj.update_sqlcmd)
         self.connect.commit()

@@ -104,7 +104,7 @@ def Row_unittest():
     print(row.movie_id)
     print(row["title"])
     
-Row_unittest()
+# Row_unittest()
 
 def Insert_unittest():
     record = ("m0001", "Yes Man!", 95, 6.3, "2010-01-01", {"Drama", "Fantasy"})
@@ -226,6 +226,29 @@ def Engine_update_unittest():
     engine.prt_all(movie)
 
 # Engine_update_unittest()
+
+def Engine_insert_and_update_unittest():
+    records = [("m0001", "The Shawshank Redemption", 142, 9.2, date(1994, 10, 14), {"Drama", "Crime"}),
+               ("m0002", "The Godfather", 175, 9.2, date(1972, 3, 24), {"Crime", "Drama"}),
+               ("m0003", "The Dark Knight", 152, 8.9, date(2008, 7, 18), {"Action", "Crime", "Drama"}),
+               ("m0004", "12 Angry Men", 96, 8.9, date(1957, 4, 11), {"Drama"}),
+               ("m0005", "Schindler's List", 195, 8.9, date(1994, 2, 4), {"Biography", "Drama", "History"}),]
+    ins = movie.insert()
+    engine.insert_many_records(ins, records)
+    
+    new_records = [("m0001", "The Shawshank Redemption", 999, None, date(1994, 10, 14), {"Drama", "Crime"}),
+                   ("m0002", "The Godfather", 999, None, date(1972, 3, 24), {"Crime", "Drama"}),]
+    new_rows = [Row(("movie_id", "title", "length", "release_date", "genres"), 
+                    ("m0004", "12 Angry Men", 999, date(1957, 4, 11), {"Drama"})),
+                Row(("movie_id", "title", "length", "release_date", "genres"), 
+                    ("m0005", "Schindler's List", 999, date(1994, 2, 4), {"Biography", "Drama", "History"})),]
+    
+    engine.insert_and_update_many_records(ins, new_records)
+    engine.insert_and_update_many_rows(ins, new_rows)
+    engine.prt_all(movie)
+    
+Engine_insert_and_update_unittest()
+
 
 def Metadata_reflect_unittest():
     """get the metadata from existing sqlite database
