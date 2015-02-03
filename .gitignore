@@ -1,5 +1,6 @@
 # Python compiled file
 *.pyc
+*.db
 
 # Windows image file caches
 Thumbs.db

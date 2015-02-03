@@ -135,13 +135,13 @@ class WinFile(object):
     def __repr__(self):
         return self.abspath
     
-    def rename(self, new_fname = None, new_dirname = None, new_ext = None):
+    def rename(self, new_dirname = None, new_fname = None, new_ext = None):
         """对文件的目录名, 纯文件名进行重命名
         """
-        if not new_fname:
-            new_fname = self.fname
         if not new_dirname:
             new_dirname = self.dirname
+        if not new_fname:
+            new_fname = self.fname
         if new_ext: # 检查新文件名的扩展名格式是否
             if not new_ext.startswith("."):
                 raise Exception("Extension must in format .ext, for example: .jpg, .mp3")
@@ -149,8 +149,9 @@ class WinFile(object):
             new_ext = self.ext
             
         os.rename(self.abspath,
-                  os.path.join(new_dirname, new_fname + self.ext) )
-        
+                  os.path.join(new_dirname, new_fname + new_ext) )
+        # 如果成功重命名, 则更新文件
+        self.fname, self.dirname, self.ext = new_fname, new_dirname, new_ext 
         
 class WinDir(object):
     """Windows目录对象, 可以通过 .属性名来访问 绝对路径, 目录总大小, 子目录数量, 子文件数量。

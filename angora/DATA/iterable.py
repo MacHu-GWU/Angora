@@ -109,7 +109,35 @@ def cycle_slice(LIST, start, end): # 测试阶段, 不实用
         return LIST[start:end+1]
     else:
         return LIST[start:] + LIST[:end+1]
-                
+
+def padding_left_shift(array, left_shift):
+    """padding_left_shift([1, 1, 1, 2, 2, 2, 2, 2, 4, 4, 4], 1)
+    [1, 1, 1, 2, 2, 2, 2, 2, 4, 4, 4] to 
+    [1, 1, 2, 2, 2, 2, 2, 4, 4, 4, 4]
+    """
+    new_array = collections.deque(array)
+    last = new_array[-1]
+    new_array.rotate(-left_shift)
+    for _ in range(left_shift):
+        new_array.pop()
+    for _ in range(left_shift):
+        new_array.append(last)
+    return new_array
+
+def padding_right_shift(array, right_shift):
+    """padding_right_shift([1, 1, 1, 2, 2, 2, 2, 2, 4, 4, 4], 1)
+    [1, 1, 1, 2, 2, 2, 2, 2, 4, 4, 4] to 
+    [1, 1, 1, 1, 2, 2, 2, 2, 2, 4, 4]
+    """
+    new_array = collections.deque(array)
+    first = new_array[0]
+    new_array.rotate(right_shift)
+    for _ in range(right_shift):
+        new_array.popleft()
+    for _ in range(right_shift):
+        new_array.appendleft(first)
+    return new_array
+
 if __name__ == "__main__":
     from angora.GADGET.pytimer import Timer
     import time
@@ -216,7 +244,7 @@ if __name__ == "__main__":
 #         print(chunk_l)
         timer.timeup()
         
-    test_grouper_dict_list()
+#     test_grouper_dict_list()
 
     def timetest_grouper():
         array = [[1,2,3] for _ in range(1000)]
@@ -265,3 +293,13 @@ if __name__ == "__main__":
         print(cycle_slice(array, 6, 3) )
         
 #     test_cycle_slice()
+
+    def test_padding_shift():
+        print("{:=^40}".format("test_padding_shift"))
+        array = [1,1,1,2,2,2,2,2,4,4,4]
+        print(padding_left_shift(array, 1))
+        print(padding_right_shift(array, 1))
+        
+#     test_padding_shift()
+
+

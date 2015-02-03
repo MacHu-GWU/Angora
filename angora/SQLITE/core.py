@@ -1,12 +1,16 @@
 ##encoding=utf8
 
 """
-Table
+author: Sanhe Hu
 
-Columns
+compatibility: python3 ONLY
+
+prerequisites: None
+
+import:
+    from .core import MetaData, Sqlite3Engine, Table, Column, DataType, Row, Select
 """
 
-from .wrapper import iterC
 from collections import OrderedDict
 import sqlite3
 import pickle
@@ -28,7 +32,13 @@ def bytestr2hexstring(bytestr):
         res.append(str(hex(i))[2:].zfill(2))
     return "".join(res)
 
-### === Row class ===
+
+##################################################
+#                                                #
+#                   Row class                    #
+#                                                #
+##################################################
+
 class Row():
     """
     """
@@ -60,7 +70,13 @@ class Row():
             self._create_dict_view()
         return self.dictionary_view[attr]
 
-### === Insert class ===
+
+##################################################
+#                                                #
+#                 Insert class                   #
+#                                                #
+##################################################
+
 class Insert():
     def __init__(self, table):
         self.table = table
@@ -132,7 +148,13 @@ class Insert():
                 new_record.append(item)
         return tuple(new_record)
 
-### === Update class ===
+
+##################################################
+#                                                #
+#                 Update class                   #
+#                                                #
+##################################################
+
 class _Update_config():
     """用于判断每个列上的值是绝对更新还是相对更新
     由于UPDATE语法中相对更新的情况下会出现下面的情况:
@@ -198,7 +220,13 @@ class Update():
                                                    self.set_clause, 
                                                    self.where_clause] if i])
 
-### === Select class ===
+
+##################################################
+#                                                #
+#                 Select class                   #
+#                                                #
+##################################################
+
 class Select():
     def __init__(self, columns):
         self.columns = columns
@@ -249,7 +277,13 @@ class Select():
                 new_record.append(item)
         return tuple(new_record)
 
-### === MetaData class ===
+
+##################################################
+#                                                #
+#                MetaData class                  #
+#                                                #
+##################################################
+
 class MetaData():
     def __init__(self, bind=None):
         self.bind = bind
@@ -261,7 +295,8 @@ class MetaData():
             try:
                 engine.cursor.execute(create_table_sqlcmd)
             except Exception as e:
-                print(e)
+                pass
+#                 print(e)
             
     def reflect(self, engine):
         import sqlalchemy
@@ -290,7 +325,13 @@ class MetaData():
                                           nullable=column.nullable,))
             table = Table(table.name, self, *columns)
 
-### === DataType class ===
+
+##################################################
+#                                                #
+#                DataType class                  #
+#                                                #
+##################################################
+
 class BaseDataType():
     """所有数据类型的父类
     """
@@ -354,7 +395,12 @@ class DataType():
     pythondict = PYTHONDICT()
     pickletype = PICKLETYPE()
 
-### === DataType sqlite3 converter ===
+##################################################
+#                                                #
+#          Datatype Sqlite3 Converter            #
+#                                                #
+##################################################
+
 def adapt_list(_LIST):
     """类 -> 字符串 转换"""
     return obj2bytestr(_LIST)
@@ -387,7 +433,13 @@ def convert_ordereddict(_STRING):
     """字符串 -> 类 转换"""
     return bytestr2obj(_STRING)
 
-### === Column class ===
+
+##################################################
+#                                                #
+#                 Column class                   #
+#                                                #
+##################################################
+
 class Column():
     def __init__(self, column_name, data_type, primary_key=False, nullable=True, default=None):
         if column_name in ["table_name", "columns", "primary_key_columns", "pickletype_columns", "all"]:
@@ -400,19 +452,20 @@ class Column():
         self.data_type = data_type
         
         # 判断列的名称
+        self.is_string_or_number = self.data_type.name in ["TEXT", "INTEGER", "REAL"]
         self.is_date = self.data_type.name == "DATE"
         self.is_datetime = self.data_type.name == "DATETIME"
         self.is_pickletype = self.data_type.name == "PICKLETYPE"
         
         # 根据数据类型, 绑定将数值转换成在SQL语句中说显示的字符串的转换器
-        if self.is_date:
+        if self.is_string_or_number:
+            self.__SQL__ = self._sql_STRING_NUMBER
+        elif self.is_date:
             self.__SQL__ = self._sql_DATE
         elif self.is_datetime:
             self.__SQL__ = self._sql_DATETIME
-        elif self.is_pickletype:
+        else: # 其他, 在转化SQL语句文本时都用 _sql_PICKLETYPE 方法
             self.__SQL__ = self._sql_PICKLETYPE
-        else:
-            self.__SQL__ = self._sql_STRING_NUMBER
         
         self.primary_key = primary_key
         self.nullable = nullable
@@ -516,7 +569,13 @@ class Column():
     def __neg__(self):
         return _Update_config("+ %s" % self.column_name)
     
-### === Table class ===
+    
+##################################################
+#                                                #
+#                  Table class                   #
+#                                                #
+##################################################
+
 class Table(): 
     def __init__(self, table_name, metadata, *args):
         self.table_name = table_name
@@ -587,17 +646,26 @@ class Table():
         """
         return Update(self)
 
-### === Sqlite3Engine class ===
+
+##################################################
+#                                                #
+#              Sqlite3Engine class               #
+#                                                #
+##################################################
+
 class Sqlite3Engine():
     def __init__(self, dbname, autocommit=True):
         self.dbname = dbname
-
+        
         sqlite3.register_adapter(list, adapt_list)
         sqlite3.register_converter("PYTHONLIST", convert_list)
+        
         sqlite3.register_adapter(set, adapt_set)
         sqlite3.register_converter("PYTHONSET", convert_set)
+        
         sqlite3.register_adapter(dict, adapt_dict)
         sqlite3.register_converter("PYTHONDICT", convert_dict)
+        
         sqlite3.register_adapter(OrderedDict, adapt_ordereddict)
         sqlite3.register_converter("ORDEREDDICT", convert_ordereddict)
         
@@ -608,7 +676,20 @@ class Sqlite3Engine():
             self._commit = self.commit
         else:
             self._commit = self.commit_nothing
+
+    def execute(self, *args, **kwarg):
+        return self.cursor.execute(*args, **kwarg)
     
+    def commit(self):
+        """method for manually commit operation
+        """
+        self.connect.commit()
+
+    def commit_nothing(self):
+        """method for doing nothing
+        """
+        pass
+
     def autocommit(self, flag):
         if flag:
             self._commit = self.commit
@@ -636,7 +717,7 @@ class Sqlite3Engine():
         """插入单条Row object"""
         insert_obj.sqlcmd_from_row(row)
         self.cursor.execute(insert_obj.insert_sqlcmd, insert_obj.default_row_converter(row))
-        self.connect.commit()
+        self._commit()
     
     def _insert_many_rows_list_mode(self, insert_obj, rows):
         """内部函数, 以列表模式插入多条Row object"""
@@ -750,21 +831,19 @@ class Sqlite3Engine():
         """
         update_obj.sqlcmd()
         self.cursor.execute(update_obj.update_sqlcmd)
-        self.connect.commit()
+        self._commit()
     
     ### === 一些简便的语法糖函数 ===
     def select_all(self, table):
         """选择整个表
         """
-        self.cursor.execute("SELECT * FROM %s;" % table.table_name)
-        return iterC(self.cursor)
+        return self.select(Select(table.all))
     
     def prt_all(self, table):
         """打印整个表
         """
-        self.cursor.execute("SELECT * FROM %s;" % table.table_name)
         counter = 0
-        for record in iterC(self.cursor):
+        for record in self.select_all(table):
             print(record)
             counter += 1
         print("Found %s records in %s" % (counter, table.table_name))
@@ -775,16 +854,5 @@ class Sqlite3Engine():
         self.cursor.execute("SELECT COUNT(*) FROM (SELECT * FROM %s);" % table.table_name)
         print("Found %s records in %s" % (self.cursor.fetchone()[0], table.table_name))
         
-    def execute(self, *args, **kwarg):
-        return self.cursor.execute(*args, **kwarg)
-        
-    def commit(self):
-        """method for manually commit operation
-        """
-        self.connect.commit()
 
-    def commit_nothing(self):
-        """method for doing nothing
-        """
-        pass
-    
+        

@@ -27,7 +27,7 @@ col_title = Column("title", datatype.text, default="unknown_title")
 col_length = Column("length", datatype.integer, default=-1)
 col_rate = Column("rate", datatype.real, default=0.01)
 col_release_date = Column("release_date", datatype.date, default="0000-01-01")
-col_genres = Column("genres", datatype.pickletype, default=set())
+col_genres = Column("genres", datatype.pythonset, default=set())
 movie = Table("movie", metadata, col_movie_id, col_title, col_length, col_rate, col_release_date, col_genres)
 
 metadata.create_all(engine)
@@ -247,8 +247,7 @@ def Engine_insert_and_update_unittest():
     engine.insert_and_update_many_rows(ins, new_rows)
     engine.prt_all(movie)
     
-Engine_insert_and_update_unittest()
-
+# Engine_insert_and_update_unittest()
 
 def Metadata_reflect_unittest():
     """get the metadata from existing sqlite database

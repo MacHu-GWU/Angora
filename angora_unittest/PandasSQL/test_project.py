@@ -4,7 +4,7 @@ from __future__ import print_function
 from angora.PandasSQL.sqlite3blackhole import Sqlite3BlackHole, CSVFile
 
 def main():
-    bh = Sqlite3BlackHole(":memory:") # define database
+    bh = Sqlite3BlackHole("test.db") # define database
     # define first file
     advertisement = CSVFile(r"test_data/advertisement.txt", # path
                             table_name="advertisement", # table_name
@@ -21,7 +21,7 @@ def main():
 
     bh.add(advertisement)
     bh.add(employee)
-    bh.update()
+    bh.devour()
     
     bh.engine.prt_howmany(advertisement.table)
     bh.engine.prt_howmany(employee.table)

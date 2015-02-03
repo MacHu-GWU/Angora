@@ -47,8 +47,13 @@ class TimeWrapper(object):
         self.default_date_template = "%Y-%m-%d"     # 日期默认模板
         self.iso_dateformat = "%Y-%m-%d"            # 国际标准模板
         
-        self.datetime_templates = ["%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S",
-                                   "%y%m%d%H", ]    # 日期时间的模板集合
+        
+        self.datetime_templates = [ # 日期时间的模板集合
+                                   "%Y-%m-%d %H:%M:%S", 
+                                   "%Y-%m-%dT%H:%M:%S",
+                                   "%y%m%d%H",
+                                   "%m/%d/%Y %I:%M:%S %p", # 1/15/2014 1:10:00 AM
+                                   ]    
         self.default_datetime_templates = "%Y-%m-%d %H:%M:%S"                   # 日期时间默认模板
         self.iso_datetimeformat = "%Y-%m-%d %H:%M:%S"                           # 国际标准模板
         
@@ -223,7 +228,9 @@ if __name__ == "__main__":
         print("{:=^40}".format("UT4"))
         timewrapper = TimeWrapper()
         
-        todo = ["2014-01-15 06:30:12", "2014-01-20T03:11:43", "2014-03-20 23:47:50Z003"]
+        todo = ["2014-01-15 06:30:12", "2014-01-20T03:11:43", 
+                "3/1/2014 12:00:00 AM", 
+                "2014-03-20 23:47:50Z003"]
         for s in todo:
             print("%s parsed as %s" % (s, timewrapper.str2datetime(s) ) )
             

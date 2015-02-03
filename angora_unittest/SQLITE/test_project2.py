@@ -21,5 +21,8 @@ ins = pythontype.insert()
 record = ([1,2,3], {1,2,3}, {1:"a", 2:"b", 3:"c"})
 
 engine.insert_record(ins, record)
- 
+
+
+# for record in engine.execute("SELECT * FROM pythontype"):
+#     print(record)
 engine.prt_all(pythontype)

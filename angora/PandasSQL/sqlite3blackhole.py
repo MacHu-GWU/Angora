@@ -1,6 +1,12 @@
 ##encoding=utf8
 
 """
+author: Sanhe Hu
+
+compatibility: python3 ONLY
+
+prerequisites: angora.SQLITE
+
 import:
     from angora.PandasSQL.sqlite3blackhole import Sqlite3BlackHole, CSVFile
 
