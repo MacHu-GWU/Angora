@@ -258,6 +258,7 @@ def Select_unittest():
     sel5 = Select(movie.all).where(movie.rate.between(5.0, 7.5))
     sel6 = Select([movie.genres]).distinct()
     
+
     print(sel1.toSQL())
     print(sel2.toSQL())
     print(sel3.toSQL())

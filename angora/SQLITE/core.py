@@ -8,7 +8,7 @@ compatibility: python3 ONLY
 prerequisites: None
 
 import:
-    from .core import MetaData, Sqlite3Engine, Table, Column, DataType, Row, _and, _or, Select
+    from .core import MetaData, Sqlite3Engine, Table, Column, DataType, Row, Select
 """
 from angora.DATA.dtype import StrSet, IntSet, StrList, IntList
 from collections import OrderedDict
@@ -58,7 +58,11 @@ class Row():
         self.columns = columns
         self.values = values
         self.dictionary_view = None
-        
+    
+    @staticmethod
+    def from_dict(dictionary):
+        return Row(list(dictionary.keys()), list(dictionary.values()))
+    
     def _create_dict_view(self):
         self.dictionary_view = OrderedDict()
         for i, j in zip(self.columns, self.values):
@@ -674,16 +678,28 @@ class Column():
     ## for Update().values() method. example: Update.values(column_name = column_name + 100)
     
     def __add__(self, other):
-        return _Update_config("%s + %s" % (self.column_name, self.__SQL__(other)) )
+        if isinstance(other, Column):
+            return _Update_config("%s + %s" % (self.column_name, other.column_name) )
+        else:
+            return _Update_config("%s + %s" % (self.column_name, self.__SQL__(other)) )
     
     def __sub__(self, other):
-        return _Update_config("%s - %s" % (self.column_name, self.__SQL__(other)) )
+        if isinstance(other, Column):
+            return _Update_config("%s - %s" % (self.column_name, other.column_name) )
+        else:
+            return _Update_config("%s - %s" % (self.column_name, self.__SQL__(other)) )
     
     def __mul__(self, other):
-        return _Update_config("%s * %s" % (self.column_name, self.__SQL__(other)) )
+        if isinstance(other, Column):
+            return _Update_config("%s * %s" % (self.column_name, other.column_name) )
+        else:
+            return _Update_config("%s * %s" % (self.column_name, self.__SQL__(other)) )
     
     def __div__(self, other):
-        return _Update_config("%s / %s" % (self.column_name, self.__SQL__(other)) )
+        if isinstance(other, Column):
+            return _Update_config("%s / %s" % (self.column_name, other.column_name) )
+        else:
+            return _Update_config("%s / %s" % (self.column_name, self.__SQL__(other)) )
     
     def __pos__(self):
         return _Update_config("- %s" % self.column_name)
@@ -998,5 +1014,6 @@ class Sqlite3Engine():
         num_of_record = self.howmany(table)
         print("Found %s records in %s" % (num_of_record, table.table_name))
         
-
-        
+#     def count_of(self, generator):
+#         for _ in generator:
+#         return counter

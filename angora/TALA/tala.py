@@ -569,6 +569,18 @@ class Query():
         """
         self.add_criterion(criterion)
         
+    def reset(self):
+        """clear all plugged in criterions
+        """
+        self.criterions.clear()
+        
+    def renew_with(self, *argv):
+        """clear all, and plug in many new criterions
+        """
+        self.reset()
+        for criterion in argv:
+            self.add(criterion)
+        
     def _split_SqlCriterions_and_KeywordCriterions(self):
         """分离对主表查询的criterion和对倒排索引表查询的criterion
         returns

@@ -7,8 +7,8 @@ best time and memory complexity implementation applied.
 compatible: python2 and python3
 
 import:
-    from angora.DATA.iterable import flatten, flatten_all, nth, shuffled, grouper, grouper_dict, grouper_list
-    from angora.DATA.iterable import running_windows, cycle_running_windows, cycle_slice
+    from .iterable import (flatten, flatten_all, nth, shuffled, grouper, grouper_dict, grouper_list,
+        running_windows, cycle_running_windows, cycle_slice, count_generator)
 """
 
 from __future__ import print_function
@@ -137,6 +137,19 @@ def padding_right_shift(array, right_shift):
     for _ in range(right_shift):
         new_array.appendleft(first)
     return new_array
+
+def count_generator(generator, memory_efficient=True):
+    """count number of item in generator
+    memory_efficient=True, 3 times slower, but memory_efficient
+    memory_efficient=False, faster, but cost more memory
+    """
+    if memory_efficient:
+        counter = 0
+        for _ in generator:
+            counter += 1
+        return counter
+    else:
+        return len(list(generator))
 
 if __name__ == "__main__":
     from angora.GADGET.pytimer import Timer
@@ -301,5 +314,3 @@ if __name__ == "__main__":
         print(padding_right_shift(array, 1))
         
 #     test_padding_shift()
-
-
