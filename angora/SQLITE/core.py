@@ -10,7 +10,7 @@ prerequisites: None
 import:
     from .core import MetaData, Sqlite3Engine, Table, Column, DataType, Row, Select
 """
-
+from angora.DATA.dtype import StrSet, IntSet, StrList, IntList
 from collections import OrderedDict
 import sqlite3
 import pickle
@@ -32,6 +32,18 @@ def bytestr2hexstring(bytestr):
         res.append(str(hex(i))[2:].zfill(2))
     return "".join(res)
 
+def hexstring2bytestr(hexstring):
+    """convert hex string to byte string, for example
+    X'80035d7100284b014b024b03652e' to b'\x80\x03]q\x00(K\x01K\x02K\x03e.'
+    """
+    res = list()
+    temp = list()
+    for i in hexstring:
+        temp.append(i)
+        if len(temp) == 2: # 每两个字符为一位, 将其按照16进制解码成整数, 转化成bytes
+            res.append(bytes([int("".join(temp), 16)]))
+            temp = list()
+    return b"".join(res) # 合并成一个bytestr
 
 ##################################################
 #                                                #
@@ -183,7 +195,7 @@ class Update():
         """
         res = list()
         for column_name, value in kwarg.items():
-            if value == None:
+            if value == None: # 有时候我们要把值更新为Null, 这样我们在values中设定=None即可
                 res.append("%s = %s" % (column_name, "NULL"))
             else:
                 column = self.table.columns[column_name]
@@ -198,7 +210,7 @@ class Update():
         return self
     
     def where(self, *argv):
-        self.where_clause = "WHERE\n\t%s" % " AND\n\t".join(argv)
+        self.where_clause = "WHERE\n\t%s" % " AND\n\t".join([i.sqlcmd for i in argv])
         return self
     
     def sqlcmd(self):
@@ -227,6 +239,16 @@ class Update():
 #                                                #
 ##################################################
 
+def _and(*argv):
+    return _Select_config("(%s)" % " AND ".join([i.sqlcmd for i in argv]))
+
+def _or(*argv):
+    return _Select_config("(%s)" % " OR ".join([i.sqlcmd for i in argv]))
+
+class _Select_config():
+    def __init__(self, sqlcmd):
+        self.sqlcmd = sqlcmd
+
 class Select():
     def __init__(self, columns):
         self.columns = columns
@@ -236,6 +258,7 @@ class Select():
                                                          self.columns[0].table_name)
         self.where_clause = None
         self.limit_clause = None
+        self.distinct_clause = None
         
         # Define default record converter, convert pickletype byte string back to python object
         if len([column for column in self.columns if column.is_pickletype]) == 0: 
@@ -244,11 +267,15 @@ class Select():
             self.default_record_converter = self.picklize_record
 
     def where(self, *argv):
-        self.where_clause = "WHERE %s" % " AND ".join(argv)
+        self.where_clause = "WHERE %s" % " AND ".join([i.sqlcmd for i in argv])
         return self
     
     def limit(self, howmany):
         self.limit_clause = "LIMIT %s" % howmany
+        return self
+    
+    def distinct(self):
+        self.select_from_clause = self.select_from_clause.replace("SELECT", "SELECT DISTINCT")
         return self
     
     def __str__(self):
@@ -312,12 +339,23 @@ class MetaData():
             columns = list()
             
             for column in table.columns.values():
-                if column.server_default:
-                    columns.append(Column(column.name, 
-                                          dtype_mapping[str(column.type)],
-                                          primary_key=column.primary_key,
-                                          nullable=column.nullable,
-                                          default=eval(column.server_default.arg.text),))
+                if column.server_default: # 如果有default
+                    if str(column.type) == "BLOB": # 如果是pickle, 需要特殊处理
+                        # sqlalchemy读取出来的是一个 X"字符串" 的repr形式, 完整形式如下:
+                        # "X'8003636275696c74696e730a7365740a71005d71018571025271032e'"
+                        # 所以我们取 str[2:-1], 然后进行hexstring2bytestr的处理
+                        # 最后再用bytestr2obj恢复成对象             
+                        columns.append(Column(column.name, 
+                                              dtype_mapping[str(column.type)],
+                                              primary_key=column.primary_key,
+                                              nullable=column.nullable,
+                                              default=bytestr2obj(hexstring2bytestr(column.server_default.arg.text[2:-1])),))
+                    else:
+                        columns.append(Column(column.name, 
+                                              dtype_mapping[str(column.type)],
+                                              primary_key=column.primary_key,
+                                              nullable=column.nullable,
+                                              default=eval(column.server_default.arg.text),))
                 else:
                     columns.append(Column(column.name, 
                                           dtype_mapping[str(column.type)],
@@ -340,7 +378,9 @@ class BaseDataType():
     
     def __repr__(self):
         return "%s()" % self.name
-    
+
+### Sqlite3内置类
+### Sqlite3 built-in data type
 class TEXT(BaseDataType):
     name = "TEXT"
     sqlite_dtype_name = "TEXT"
@@ -360,7 +400,33 @@ class DATE(BaseDataType):
 class DATETIME(BaseDataType):
     name = "DATETIME"
     sqlite_dtype_name = "DATETIME"
-    
+
+### 用户自定义类
+### user customized data type
+# 什么时候用PICKLETYPE, 什么时候用PYTHONLIST, PYTHONSET, PYTHONDICT？
+#     对于PICKLETYPE可以接受任意的Python对象, 若用原生的cursor.execute执行select语句时
+#     返回的将是byte string而不是转换过后的对象本身。而只有用Select API进行select时候才
+#     能返回正确的对象。因为考虑到sqlite3注册转换器时一对转换器只能接受一种type。所以不
+#     可能用一对转换器处理任意Python对象。所以针对PICKLETYPE采用了特别的处理方式
+#
+#     而对于PYTHONLIST, PYTHONSET, PYTHONDICT其实同样是采用pickle.dumps, pickle.loads这样
+#     的转换器。 但是由于注册了转换器, 所以用户既可以用Select API也可以用原生的cursor进行
+#     选择, 都能得到正确的对象。
+#
+#     对于StrSet, IntSet, StrList, IntList这四种对象, 由于用字符串join的方式要比pickle.dumps
+#     方式I/O的速度要快, 所以我们注册了特殊的转换器。
+#
+#     以上所有的特殊自定义类将会影响到Column.__SQL__()方法。这是由于在Sql语句中要将类转化为
+#     合法的字符串。详情请参考Column.__SQL__()方法的部分。
+
+class PICKLETYPE(BaseDataType):
+    """
+    [EN]Can be use to store any pickleable python type
+    [CN]可以用来储存任意pickleable的python对象
+    """
+    name = "PICKLETYPE"
+    sqlite_dtype_name = "BLOB"
+
 class PYTHONLIST(BaseDataType):
     name = "PYTHONLIST"
     sqlite_dtype_name = "PYTHONLIST"
@@ -376,11 +442,23 @@ class PYTHONDICT(BaseDataType):
 class ORDEREDDICT(BaseDataType):
     name = "ORDEREDDICT"
     sqlite_dtype_name = "ORDEREDDICT"
+
+class STRSET(BaseDataType):
+    name = "STRSET"
+    sqlite_dtype_name = "STRSET"
     
-class PICKLETYPE(BaseDataType):
-    name = "PICKLETYPE"
-    sqlite_dtype_name = "BLOB"
+class INTSET(BaseDataType):
+    name = "INTSET"
+    sqlite_dtype_name = "INTSET"
+
+class STRLIST(BaseDataType):
+    name = "STRLIST"
+    sqlite_dtype_name = "STRLIST"
     
+class INTLIST(BaseDataType):
+    name = "INTLIST"
+    sqlite_dtype_name = "INTLIST"
+
 class DataType():
     """数据类型的容器类, 用于通过DataType.text来调用TEXT(), 可以解决与其他库里面同样需要
     import TEXT, INTEGER, ... 然后发生命名空间冲突的问题。
@@ -390,11 +468,17 @@ class DataType():
     real = REAL()
     date = DATE()
     datetime = DATETIME()
+    pickletype = PICKLETYPE()
     pythonlist = PYTHONLIST()
     pythonset = PYTHONSET()
     pythondict = PYTHONDICT()
+    ordereddict = ORDEREDDICT()
     pickletype = PICKLETYPE()
-
+    strset = STRSET()
+    intset = INTSET()
+    strlist = STRLIST()
+    intlist = INTLIST()
+    
 ##################################################
 #                                                #
 #          Datatype Sqlite3 Converter            #
@@ -433,7 +517,6 @@ def convert_ordereddict(_STRING):
     """字符串 -> 类 转换"""
     return bytestr2obj(_STRING)
 
-
 ##################################################
 #                                                #
 #                 Column class                   #
@@ -450,27 +533,35 @@ class Column():
         self.table_name = None
         self.full_name = None
         self.data_type = data_type
-        
-        # 判断列的名称
-        self.is_string_or_number = self.data_type.name in ["TEXT", "INTEGER", "REAL"]
-        self.is_date = self.data_type.name == "DATE"
-        self.is_datetime = self.data_type.name == "DATETIME"
         self.is_pickletype = self.data_type.name == "PICKLETYPE"
-        
-        # 根据数据类型, 绑定将数值转换成在SQL语句中说显示的字符串的转换器
-        if self.is_string_or_number:
-            self.__SQL__ = self._sql_STRING_NUMBER
-        elif self.is_date:
-            self.__SQL__ = self._sql_DATE
-        elif self.is_datetime:
-            self.__SQL__ = self._sql_DATETIME
-        else: # 其他, 在转化SQL语句文本时都用 _sql_PICKLETYPE 方法
-            self.__SQL__ = self._sql_PICKLETYPE
-        
         self.primary_key = primary_key
         self.nullable = nullable
         self.default = default
-                    
+        
+        # 在SQL语句中我们表示数字, 日期, 字符串, 对象都有不同的格式。例如:
+        #     Default 'unknown'
+        #     WHERE column_name >= '2014-01-01'
+        #     SET column_name = 128
+        # 所以我们需要一些特殊的方法处理每一种数据类型在Sql语句中的字符串
+        
+        __SQL__method_mapping = {
+            "TEXT": self._sql_STRING_NUMBER,
+            "INTEGER": self._sql_STRING_NUMBER,
+            "REAL": self._sql_STRING_NUMBER,
+            "DATE": self._sql_DATE,
+            "DATETIME": self._sql_DATETIME,
+            "PICKLETYPE": self._sql_PICKLETYPE,
+            "PYTHONLIST": self._sql_PICKLETYPE,
+            "PYTHONSET": self._sql_PICKLETYPE,
+            "PYTHONDICT": self._sql_PICKLETYPE,
+            "ORDEREDDICT": self._sql_PICKLETYPE,
+            "STRSET": self._sql_STRSET,
+            "INTSET": self._sql_INTSET,
+            "STRLIST": self._sql_STRLIST,
+            "INTLIST": self._sql_INTLIST,
+            }
+        self.__SQL__ = __SQL__method_mapping[self.data_type.name]
+             
     def __str__(self):
         """return column_name
         """
@@ -504,7 +595,27 @@ class Column():
         """if it is python object, in sql command we convert it to byte string, like 'gx4=fjl82d...'
         """
         return "X'%s'" % bytestr2hexstring(obj2bytestr(value))
+
+    def _sql_STRSET(self, value):
+        """if it is StrSet, in sql commend we use 'item1&&item2&&...&&itemN'
+        """
+        return repr(StrSet.sqlite3_adaptor(value))
     
+    def _sql_INTSET(self, value):
+        """if it is IntSet, in sql commend we use 'item1&&item2&&...&&itemN'
+        """
+        return repr(IntSet.sqlite3_adaptor(value))
+    
+    def _sql_STRLIST(self, value):
+        """if it is StrList, in sql commend we use 'item1&&item2&&...&&itemN'
+        """
+        return repr(StrList.sqlite3_adaptor(value))
+    
+    def _sql_INTLIST(self, value):
+        """if it is IntList, in sql commend we use 'item1&&item2&&...&&itemN'
+        """
+        return repr(IntList.sqlite3_adaptor(value))
+
     def create_table_sql(self):
         """generate the definition part of 'CREATE TABLE (...)' SQL command
         by column name, data type, constrains.
@@ -529,26 +640,37 @@ class Column():
             default_part = "DEFAULT %s" % self.__SQL__(self.default)
         return " ".join([i for i in [name_part, dtype_part, nullable_part, default_part] if i])
     
+    """
+    由于Select API中的where()使用比较运算符将column与值进行比较, 所以我们定义了
+    column与值的比较运算返回一个SQL语句的字符串。
+    Select([columns]).where(column operator value) method
+    """
+    
     ## for Select().where() method. example Select().where(column_name >= 100)
     
     def __lt__(self, other):
-        return "%s < %s" % (self.column_name, self.__SQL__(other))
+        return _Select_config("%s < %s" % (self.column_name, self.__SQL__(other)) )
 
     def __le__(self, other):
-        return "%s <= %s" % (self.column_name, self.__SQL__(other))
+        return _Select_config("%s <= %s" % (self.column_name, self.__SQL__(other)) )
     
     def __eq__(self, other):
-        return "%s = %s" % (self.column_name, self.__SQL__(other))
+        return _Select_config("%s = %s" % (self.column_name, self.__SQL__(other)) )
     
     def __ne__(self, other):
-        return "%s != %s" % (self.column_name, self.__SQL__(other))
+        return _Select_config("%s != %s" % (self.column_name, self.__SQL__(other)) )
     
     def __gt__(self, other):
-        return "%s > %s" % (self.column_name, self.__SQL__(other))
+        return _Select_config("%s > %s" % (self.column_name, self.__SQL__(other)) )
     
     def __ge__(self, other):
-        return "%s >= %s" % (self.column_name, self.__SQL__(other))
+        return _Select_config("%s >= %s" % (self.column_name, self.__SQL__(other)) )
     
+    def between(self, lowerbound, upperbound):
+        return _Select_config("%s BETWEEN %s AND %s" % (self.column_name,
+                                                        self.__SQL__(lowerbound),
+                                                        self.__SQL__(upperbound),))
+        
     ## for Update().values() method. example: Update.values(column_name = column_name + 100)
     
     def __add__(self, other):
@@ -584,8 +706,10 @@ class Table():
         self.pickletype_columns = list()
         
         for column in args:
+            # 将column与table绑定后, column就会多出两个table_name和full_name的属性
             column.table_name = self.table_name
             column.full_name = "%s.%s" % (self.table_name, column.column_name)
+            # 分别为columns, primary_key_columns, pickletype_columns属性填充数据
             self.columns[column.column_name] = column
             if column.primary_key:
                 self.primary_key_columns.append(column.column_name)
@@ -656,7 +780,7 @@ class Table():
 class Sqlite3Engine():
     def __init__(self, dbname, autocommit=True):
         self.dbname = dbname
-        
+
         sqlite3.register_adapter(list, adapt_list)
         sqlite3.register_converter("PYTHONLIST", convert_list)
         
@@ -668,7 +792,19 @@ class Sqlite3Engine():
         
         sqlite3.register_adapter(OrderedDict, adapt_ordereddict)
         sqlite3.register_converter("ORDEREDDICT", convert_ordereddict)
+
+        sqlite3.register_adapter(StrSet, StrSet.sqlite3_adaptor)
+        sqlite3.register_converter("STRSET", StrSet.sqlite3_converter)
         
+        sqlite3.register_adapter(IntSet, IntSet.sqlite3_adaptor)
+        sqlite3.register_converter("INTSET", IntSet.sqlite3_converter)
+
+        sqlite3.register_adapter(StrList, StrList.sqlite3_adaptor)
+        sqlite3.register_converter("STRLIST", StrList.sqlite3_converter)
+        
+        sqlite3.register_adapter(IntList, IntList.sqlite3_adaptor)
+        sqlite3.register_converter("INTLIST", IntList.sqlite3_converter)
+
         self.connect = sqlite3.connect(dbname, detect_types=sqlite3.PARSE_DECLTYPES)
         self.cursor = self.connect.cursor()
         
@@ -691,6 +827,8 @@ class Sqlite3Engine():
         pass
 
     def autocommit(self, flag):
+        """switch on or off autocommit
+        """
         if flag:
             self._commit = self.commit
         else:
@@ -848,11 +986,17 @@ class Sqlite3Engine():
             counter += 1
         print("Found %s records in %s" % (counter, table.table_name))
     
+    def howmany(self, table):
+        """返回表内的记录总数
+        """
+        self.cursor.execute("SELECT COUNT(*) FROM (SELECT * FROM %s);" % table.table_name)
+        return self.cursor.fetchone()[0]
+    
     def prt_howmany(self, table):
         """打印表内有多少条记录
         """
-        self.cursor.execute("SELECT COUNT(*) FROM (SELECT * FROM %s);" % table.table_name)
-        print("Found %s records in %s" % (self.cursor.fetchone()[0], table.table_name))
+        num_of_record = self.howmany(table)
+        print("Found %s records in %s" % (num_of_record, table.table_name))
         
 
         

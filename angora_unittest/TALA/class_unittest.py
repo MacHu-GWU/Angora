@@ -73,11 +73,11 @@ if __name__ == "__main__":
         
         for document in documents:
             engine.add_one(document)
-        
+            
         engine.engine.prt_all(engine.get_table("movie"))
         engine.engine.prt_all(engine.get_table("genres"))
         
-    Engine_add_one_unittest()
+#     Engine_add_one_unittest()
 
     def Engine_add_all_unittest():
         documents = [

@@ -8,7 +8,7 @@ OrderedSet 有序集合
 SuperSet 能同时intersect, union多个集合
 
 import:
-    from HSH.Data.dtype import OrderedSet
+    from HSH.Data.dtype import OrderedSet, StrSet, IntSet, StrList, IntList
 """
 
 from __future__ import print_function
@@ -71,7 +71,55 @@ class OrderedSet(collections.MutableSet):
         if isinstance(other, OrderedSet):
             return len(self) == len(other) and list(self) == list(other)
         return set(self) == set(other)
+
+class StrSet(set):
+    """set that all elements are string"""
+    @staticmethod
+    def sqlite3_adaptor(_STRSET):
+        """类 -> 字符串 转换"""
+        return "&&".join(_STRSET)
     
+    @staticmethod
+    def sqlite3_converter(_STRING):
+        """类 -> 字符串 转换"""
+        return StrSet(_STRING.decode().split("&&"))
+    
+class IntSet(set):
+    """set that all elements are integer"""
+    @staticmethod
+    def sqlite3_adaptor(_INTSET):
+        """类 -> 字符串 转换"""
+        return "&&".join([str(i) for i in _INTSET])
+    
+    @staticmethod
+    def sqlite3_converter(_STRING):
+        """类 -> 字符串 转换"""
+        return IntSet([int(s) for s in _STRING.decode().split("&&")])
+    
+class StrList(list):
+    """list that all elements are string"""
+    @staticmethod
+    def sqlite3_adaptor(_STRLIST):
+        """类 -> 字符串 转换"""
+        return "&&".join(_STRLIST)
+    
+    @staticmethod
+    def sqlite3_converter(_STRING):
+        """类 -> 字符串 转换"""
+        return StrList(_STRING.decode().split("&&"))
+
+class IntList(list):
+    """list that all elements are string"""
+    @staticmethod
+    def sqlite3_adaptor(_INTLIST):
+        """类 -> 字符串 转换"""
+        return "&&".join([str(i) for i in _INTLIST])
+    
+    @staticmethod
+    def sqlite3_converter(_STRING):
+        """类 -> 字符串 转换"""
+        return IntList([int(s) for s in _STRING.decode().split("&&")])
+
 if __name__ == "__main__":    
     def test_OrderedSet():
         def orderedSet_UT1():
@@ -96,5 +144,16 @@ if __name__ == "__main__":
         orderedSet_UT1()
         orderedSet_UT2()
         
-    test_OrderedSet()
+#     test_OrderedSet()
+
+    def test_set_and_list():
+        s = StrSet([1,2,3])
+        s.add(4)
+        print(s, type(s))
+        
+        l = StrList([1,2,3])
+        l.append(4)
+        print(l, type(l))
+        
+    test_set_and_list()
     

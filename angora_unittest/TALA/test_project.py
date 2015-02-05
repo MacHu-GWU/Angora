@@ -45,12 +45,14 @@ movie_schema = Schema("movie",
     )
 
 engine = SearchEngine(movie_schema) # 13.27秒
-engine.clone_from_data_stream(document_generator())
-engine.engine.commit()
+# engine.clone_from_data_stream(document_generator())
+# engine.engine.commit()
 
 query = engine.create_query()
 query.add(query.query_like("title", "walking"))
 query.add(query.query_between("year", 1993, 2000)) # year between 1993, 2000
 query.add(query.query_contains("genres", "Drama", "Romance")) # genres contains Drama
-for document in engine.search_document(query):
+
+results = engine.search_document(query)
+for document in results:
     print(document)

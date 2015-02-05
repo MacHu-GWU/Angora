@@ -1,7 +1,7 @@
 ##encoding=utf8
 
 from .dicttree import DictTree
-from .dtype import OrderedSet
+from .dtype import OrderedSet, StrSet, IntSet, StrList, IntList
 from .hashutil import md5_str, md5_obj, md5_file, hash_obj
 from .invertindex import invertindex
 from .iterable import flatten, flatten_all, nth, shuffled, grouper, grouper_dict, grouper_list
