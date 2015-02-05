@@ -45,8 +45,8 @@ movie_schema = Schema("movie",
     )
 
 engine = SearchEngine(movie_schema) # 13.27秒
-# engine.clone_from_data_stream(document_generator())
-# engine.engine.commit()
+engine.clone_from_data_stream(document_generator())
+engine.engine.commit()
 
 query = engine.create_query()
 query.add(query.query_like("title", "walking"))

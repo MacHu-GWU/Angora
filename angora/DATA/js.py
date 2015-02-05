@@ -109,7 +109,7 @@ def safe_dump_js(js, fname, fastmode = False, enable_verbose = True):
     重命名覆盖原文件。这样即使中途程序被中断，也仅仅是留下了一个未完成的临时文件而已，不会影响原文件。
     
     """
-    temp_fname = "safe_dump_json_temp.tmp"
+    temp_fname = "%s.tmp" % fname
     dump_js(js, temp_fname, fastmode = fastmode, replace = True, enable_verbose = enable_verbose)
     shutil.move(temp_fname, fname)
     

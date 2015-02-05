@@ -95,7 +95,7 @@ def safe_dump_pk(obj, fname, pickle_protocol = pk_protocol, enable_verbose = Tru
     重命名覆盖原文件。这样即使中途程序被中断，也仅仅是留下了一个未完成的临时文件而已，不会影响原文件。
     
     """
-    temp_fname = "safe_dump_pk_temp.tmp"
+    temp_fname = "%s.tmp" % fname
     dump_pk(obj, temp_fname, pickle_protocol = pk_protocol, replace = True, enable_verbose = enable_verbose)
     shutil.move(temp_fname, fname)
 

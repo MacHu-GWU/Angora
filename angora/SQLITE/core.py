@@ -8,7 +8,7 @@ compatibility: python3 ONLY
 prerequisites: None
 
 import:
-    from .core import MetaData, Sqlite3Engine, Table, Column, DataType, Row, Select
+    from .core import MetaData, Sqlite3Engine, Table, Column, DataType, Row, _and, _or, Select
 """
 from angora.DATA.dtype import StrSet, IntSet, StrList, IntList
 from collections import OrderedDict
