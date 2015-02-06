@@ -48,11 +48,23 @@ engine = SearchEngine(movie_schema) # 13.27秒
 engine.clone_from_data_stream(document_generator())
 engine.engine.commit()
 
-query = engine.create_query()
-query.add(query.query_like("title", "walking"))
-query.add(query.query_between("year", 1993, 2000)) # year between 1993, 2000
-query.add(query.query_contains("genres", "Drama", "Romance")) # genres contains Drama
+# query = engine.create_query()
+# query.add(query.query_like("title", "walking"))
+# query.add(query.query_between("yea", 1993, 2000)) # year between 1993, 2000
+# query.add(query.query_greater("length", 100))
+# query.add(query.query_contains("genres", "Drama", "Romance")) # genres contains Drama
+# query.order_by(["length"], ["DESC"])
+# query.limit(10)
+# results = engine.search_document(query)
+# for document in results:
+#     print(document)
 
-results = engine.search_document(query)
-for document in results:
-    print(document)
+def help_information():
+    engine.display_searchable_fields()
+    engine.display_keyword_fields()
+    engine.display_criterion()
+    engine.display_valid_keyword("genres")
+    engine.search_valid_keyword("genres", "ome")
+    engine.help()
+    
+# help_information()

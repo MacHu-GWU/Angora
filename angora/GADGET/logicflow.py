@@ -10,7 +10,6 @@ import:
 """
 
 from __future__ import print_function
-import timeit
 
 def tryit(howmany, func, *argv, **kwarg):
     """这个函数使用了一个重要的技巧将原函数的参数原封不动的封装成tryit这个函数的参数了
@@ -46,4 +45,4 @@ if __name__ == "__main__":
         except Exception as e:
             print(e)
     
-#     usage_tryit()
+    usage_tryit()

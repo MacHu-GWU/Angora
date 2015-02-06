@@ -94,3 +94,11 @@ if __name__ == "__main__":
         
 #     Engine_add_all_unittest()
     
+    def Query_unittest():
+        query = engine.create_query()
+        query.renew_with(query.query_between("rating", 0.0, 10.0))
+        query.order_by(["year"], ["DESC"])
+        main_sqlcmd, main_sqlcmd_select_all, keyword_sqlcmd_list = query.create_sql()
+        print(main_sqlcmd)
+        
+    Query_unittest()

@@ -1,6 +1,17 @@
 ##encoding=utf8
 
 """
+SQLITE
+------
+    SQLITE is a Python sqlite3 SQL toolkit that gives application developers the full power and
+    flexibility of SQL. Sounds like SqlAlchemy? Right! But in sqlite3, it's even faster than
+    SqlAlchemy. And SQLITE is easier to be extend with User Customized DataType, transaction flow.
+    Anyway, the original idea is from SqlAlchemy. Thanks for SqlAlchemy.
+    
+    Why it's faster than SqlAlchemy in sqlite?
+        because sqlite is single writer database designed for simple but high volumn I/O task.
+        so SqlAlchemy is like 3-5 slower than the original python sqlite3 API.
+
 author: Sanhe Hu
 
 compatibility: python3 ONLY
@@ -10,6 +21,7 @@ prerequisites: None
 import:
     from .core import MetaData, Sqlite3Engine, Table, Column, DataType, Row, Select
 """
+
 from angora.DATA.dtype import StrSet, IntSet, StrList, IntList
 from collections import OrderedDict
 import sqlite3
@@ -249,6 +261,12 @@ def _and(*argv):
 def _or(*argv):
     return _Select_config("(%s)" % " OR ".join([i.sqlcmd for i in argv]))
 
+def asc(column_name):
+    return _Select_config("%s ASC" % column_name)
+
+def desc(column_name):
+    return _Select_config("%s DESC" % column_name)
+
 class _Select_config():
     def __init__(self, sqlcmd):
         self.sqlcmd = sqlcmd
@@ -261,7 +279,9 @@ class Select():
         self.select_from_clause = "SELECT %s FROM %s" % (", ".join(self.column_names), 
                                                          self.columns[0].table_name)
         self.where_clause = None
+        self.orderby_clause = None
         self.limit_clause = None
+        self.offset_clause = None
         self.distinct_clause = None
         
         # Define default record converter, convert pickletype byte string back to python object
@@ -271,21 +291,45 @@ class Select():
             self.default_record_converter = self.picklize_record
 
     def where(self, *argv):
+        """take arbitrary many _Select_config object in where clause
+        """
         self.where_clause = "WHERE %s" % " AND ".join([i.sqlcmd for i in argv])
         return self
     
     def limit(self, howmany):
+        """limit clause
+        """
         self.limit_clause = "LIMIT %s" % howmany
+        return self
+    
+    def offset(self, howmany):
+        """offset clause
+        """
+        self.offset_clause = "OFFSET %s" % howmany
         return self
     
     def distinct(self):
         self.select_from_clause = self.select_from_clause.replace("SELECT", "SELECT DISTINCT")
         return self
     
+    def order_by(self, *argv):
+        """take arbitrary many _Select_config object in where clause
+        """
+        new_argv = list()
+        for i in argv:
+            if isinstance(i, _Select_config):
+                new_argv.append(i)
+            else:
+                new_argv.append(asc(i))
+        self.orderby_clause = "ORDER BY %s" % ", ".join([i.sqlcmd for i in new_argv])
+        return self
+        
     def __str__(self):
         return "\n\t".join([i for i in [self.select_from_clause,
                                         self.where_clause,
-                                        self.limit_clause] if i ])
+                                        self.orderby_clause,
+                                        self.limit_clause,
+                                        self.offset_clause] if i ])
     
     def toSQL(self):
         """return the SELECT SQL command"""
@@ -317,10 +361,22 @@ class Select():
 
 class MetaData():
     def __init__(self, bind=None):
-        self.bind = bind
         self.tables = dict()
-
+        if bind:
+            self.reflect(bind)
+        else:
+            self.bind = bind
+    
+    def __str__(self):
+        return "\n".join([repr(table) for table in self.tables.values()])
+    
+    def get_table(self, table_name):
+        return self.tables[table_name]
+    
     def create_all(self, engine):
+        """create all table stored in metadata through the engine
+        """
+        self.bind = engine
         for table in self.tables.values():
             create_table_sqlcmd = table.create_table_sql()
             try:
@@ -328,46 +384,80 @@ class MetaData():
             except Exception as e:
                 pass
 #                 print(e)
-            
+    
+    
+    ### ========== Reflect 方法所需的方法, 主要用来处理column中的default value ===========
+    def _eval_converter(self, text):
+        if text:
+            return eval(text)
+        else:
+            return None
+        
+    def _blob_converter(self, text):
+        """如果某一列是pickletype或是BlOB字节类型, 那么数据库中储存的值是:
+        b'\x80\x03]q\x00(K\x01K\x02K\x03e.' type bytes
+        但是从数据库中读取metadata的时候, 读出来的是其16进制并转化成了的字符串的形式, 形如
+        "X'80035d7100284b014b024b03652e'" type str
+        
+        那么我们要从这个字符串中解析出原来的python对象, 我们就需要:
+            1. 首先对字符串进行截取, 取str[2:-1], 获得数字的部分
+            2. 然后再用hextstring2bytestr转化成bytestr, b'\x80\x03]q\x00(K\x01K\x02K\x03e.'
+            3. 最后再用bytestr2obj恢复成对象
+        """
+        if text:
+            return bytestr2obj(hexstring2bytestr(text[2:-1]))
+        else:
+            return None
+        
+    def _strset_converter(self, text):
+        return StrSet.sqlite3_converter(eval(text))
+    
+    def _intset_converter(self, text):
+        return IntSet.sqlite3_converter(eval(text))
+    
+    def _strlist_converter(self, text):
+        return StrList.sqlite3_converter(eval(text))
+    
+    def _intlist_converter(self, text):
+        return IntList.sqlite3_converter(eval(text))
+    
     def reflect(self, engine):
-        import sqlalchemy
-        SAengine = sqlalchemy.create_engine("sqlite:///%s" % engine.dbname, echo=False)
-        meta = sqlalchemy.MetaData()
-        meta.reflect(bind=SAengine)
+        """read sqlite3 metadata, create the database schema.
+        """
+        self.bind = engine
+        dtype_mapping = {
+            "TEXT": TEXT(), "INTEGER": INTEGER(), "REAL": REAL(), "DATE": DATE(), 
+            "DATETIME": DATETIME(), "BLOB": PICKLETYPE(),
+            "PYTHONLIST": PYTHONLIST(), "PYTHONSET": PYTHONSET(),
+            "PYTHONDICT": PYTHONDICT(), "ORDEREDDICT": ORDEREDDICT(),
+            "STRSET": STRSET(), "INTSET": INTSET(),
+            "STRLIST": STRLIST(), "INTLIST": INTLIST(),
+            }
         
-        dtype_mapping = {"TEXT": TEXT(), "INTEGER": INTEGER(), "REAL": REAL(), "DATE": DATE(),
-                         "DATETIME": DATETIME(), "BLOB": PICKLETYPE(),}
+        default_value_mapping = {
+            "TEXT": self._eval_converter, "INTEGER": self._eval_converter, 
+            "REAL": self._eval_converter, "DATE": self._eval_converter, 
+            "DATETIME": self._eval_converter, "BLOB": self._blob_converter,
+            "PYTHONLIST": self._blob_converter, "PYTHONSET": self._blob_converter,
+            "PYTHONDICT": self._blob_converter, "ORDEREDDICT": self._blob_converter,
+            "STRSET": self._strset_converter, "INTSET": self._intset_converter,
+            "STRLIST": self._strlist_converter, "INTLIST": self._intlist_converter,
+            }
         
-        for table in meta.tables.values():
-            
+        table_name_list = list(engine.execute("""SELECT name FROM sqlite_master 
+            WHERE type='table';"""))
+        
+        for table_name in table_name_list:
+            table_name = table_name[0]
             columns = list()
+            for record in engine.execute("PRAGMA table_info(%s)" % table_name):
+                _, column_name, column_type_name, not_null, default_value, is_primarykey = record
+                column = Column(column_name, dtype_mapping[column_type_name], 
+                                primary_key=is_primarykey==1, nullable=not not_null,
+                                default=default_value_mapping[column_type_name](default_value),)
+                columns.append(column)
+            table = Table(table_name, self, *columns)
             
-            for column in table.columns.values():
-                if column.server_default: # 如果有default
-                    if str(column.type) == "BLOB": # 如果是pickle, 需要特殊处理
-                        # sqlalchemy读取出来的是一个 X"字符串" 的repr形式, 完整形式如下:
-                        # "X'8003636275696c74696e730a7365740a71005d71018571025271032e'"
-                        # 所以我们取 str[2:-1], 然后进行hexstring2bytestr的处理
-                        # 最后再用bytestr2obj恢复成对象             
-                        columns.append(Column(column.name, 
-                                              dtype_mapping[str(column.type)],
-                                              primary_key=column.primary_key,
-                                              nullable=column.nullable,
-                                              default=bytestr2obj(hexstring2bytestr(column.server_default.arg.text[2:-1])),))
-                    else:
-                        columns.append(Column(column.name, 
-                                              dtype_mapping[str(column.type)],
-                                              primary_key=column.primary_key,
-                                              nullable=column.nullable,
-                                              default=eval(column.server_default.arg.text),))
-                else:
-                    columns.append(Column(column.name, 
-                                          dtype_mapping[str(column.type)],
-                                          primary_key=column.primary_key,
-                                          nullable=column.nullable,))
-            table = Table(table.name, self, *columns)
-
-
 ##################################################
 #                                                #
 #                DataType class                  #
@@ -473,11 +563,11 @@ class DataType():
     date = DATE()
     datetime = DATETIME()
     pickletype = PICKLETYPE()
+    
     pythonlist = PYTHONLIST()
     pythonset = PYTHONSET()
     pythondict = PYTHONDICT()
     ordereddict = ORDEREDDICT()
-    pickletype = PICKLETYPE()
     strset = STRSET()
     intset = INTSET()
     strlist = STRLIST()
@@ -648,9 +738,10 @@ class Column():
     由于Select API中的where()使用比较运算符将column与值进行比较, 所以我们定义了
     column与值的比较运算返回一个SQL语句的字符串。
     Select([columns]).where(column operator value) method
-    """
     
-    ## for Select().where() method. example Select().where(column_name >= 100)
+    例如 column_name >= datetime.date(2000,1,1) 则会返回一个 _Select_config对象,
+    其中_Select_config.sqlcmd = "column_name >= '2000-01-01'"
+    """
     
     def __lt__(self, other):
         return _Select_config("%s < %s" % (self.column_name, self.__SQL__(other)) )
@@ -671,11 +762,26 @@ class Column():
         return _Select_config("%s >= %s" % (self.column_name, self.__SQL__(other)) )
     
     def between(self, lowerbound, upperbound):
+        """WHERE...BETWEEN...AND... clause
+        """
         return _Select_config("%s BETWEEN %s AND %s" % (self.column_name,
                                                         self.__SQL__(lowerbound),
                                                         self.__SQL__(upperbound),))
-        
+
+    def like(self, wildcards):
+        """WHERE...LIKE... clause
+        """
+        return _Select_config("%s LIKE %s" % (self.column_name, self.__SQL__(wildcards)))
+
     ## for Update().values() method. example: Update.values(column_name = column_name + 100)
+    """
+    由于在Update API中的values()方法使用计算符对column进行设定, 所以我们定义了
+    column与值的计算返回一个SQL语句的字符串
+    Update(table).values(column1 = value1, column2 = value2, ...)
+    
+    例如 column_name = datetime.date(2000,1,1) 则会返回一个 _Update_config对象,
+    其中_Update_config.sqlcmd = "column_name = '2000-01-01'"
+    """
     
     def __add__(self, other):
         if isinstance(other, Column):
@@ -707,7 +813,7 @@ class Column():
     def __neg__(self):
         return _Update_config("+ %s" % self.column_name)
     
-    
+
 ##################################################
 #                                                #
 #                  Table class                   #
@@ -740,8 +846,9 @@ class Table():
         return self.table_name
     
     def __repr__(self):
-        return "Table('%s', MetaData(bind=None), %s)" % (self.table_name, 
-                                                         ", ".join([repr(column) for column in self.columns.values()]))
+        return "Table('%s', MetaData(), \n\t%s\n\t)" % (self.table_name, 
+                                                        ",\n\t".join([repr(column) for column in self.columns.values()]))
+    
     
     def __getattr__(self, attr):
         if attr in self.columns:
@@ -1013,7 +1120,3 @@ class Sqlite3Engine():
         """
         num_of_record = self.howmany(table)
         print("Found %s records in %s" % (num_of_record, table.table_name))
-        
-#     def count_of(self, generator):
-#         for _ in generator:
-#         return counter

@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 from angora.SQLITE.core import (MetaData, Sqlite3Engine, Table, Column, DataType, Row, 
-                                _and, _or, Select)
+                                _and, _or, desc, Select)
 from angora.STRING.formatmaster import Template
 from datetime import date
 from pprint import pprint
@@ -247,17 +247,37 @@ def Engine_insert_unittest():
     
 # Engine_insert_unittest()
 
+################
+#    Select    #
+################
+
 def Select_unittest():
-    sel1 = Select(movie.all).where(movie.length > 100, movie.release_date < date(2000, 1, 1)).limit(5)
+    # 测试where中的比较
+    sel1 = Select(movie.all).where(movie.length > 100, movie.release_date < date(2000, 1, 1))
+    # 测试_and函数
     sel2 = Select(movie.all).where(_and(movie.length > 100, movie.release_date < date(2000, 1, 1)))
+    # 测试_or函数
     sel3 = Select(movie.all).where(_or(movie.rate > 6.5, movie.release_date < date(2000, 1, 1)))
+    # 测试_and和_or函数结合使用
     sel4 = Select(movie.all).where(
-               _or(_and(movie.length > 100, movie.release_date < date(2000, 1, 1)),
-                  movie.rate > 6.5)
+               _or(
+                   _and(movie.length > 100, 
+                        movie.release_date < date(2000, 1, 1)),
+                   movie.rate > 6.5)
                )
+    # 测试between方法
     sel5 = Select(movie.all).where(movie.rate.between(5.0, 7.5))
-    sel6 = Select([movie.genres]).distinct()
+    # 测试like方法
+    sel6 = Select(movie.all).where(movie.title.like("%dark%"))
     
+    # 测试distinct方法
+    sel7 = Select([movie.genres]).distinct()
+    # 测试order_by方法
+    sel8 = Select(movie.all).order_by("movie_id")
+    # 测试limit方法
+    sel9 = Select(movie.all).limit(3)
+    # 测试offset方法
+    sel10 = Select(movie.all).limit(3).offset(2)
 
     print(sel1.toSQL())
     print(sel2.toSQL())
@@ -265,19 +285,20 @@ def Select_unittest():
     print(sel4.toSQL())
     print(sel5.toSQL())
     print(sel6.toSQL())
+    print(sel7.toSQL())
+    print(sel8.toSQL())
+    print(sel9.toSQL())
+    print(sel10.toSQL())
     
 # Select_unittest()
 
 def Engine_select_unittest():
     ins = movie.insert()
     engine.insert_many_records(ins, records)
-    
-    tplt._straightline("test Select object to SQL command")
+
     sel = Select(movie.all).where(_and(movie.length > 100, 
                                        movie.release_date.between(date(1990, 1, 1),
                                                                   date(2000, 1, 1))  ) ).limit(3)
-    
-    print(sel.toSQL())
     
     tplt._straightline("test Select record")
     for record in engine.select(sel):
@@ -287,8 +308,24 @@ def Engine_select_unittest():
     for row in engine.select_row(sel):
         print(row)
         
+    tplt._straightline("test Select between")
+    for record in engine.select(Select(movie.all).where(movie.rate.between(8.0, 9.9))):
+        print(record)
+
+    tplt._straightline("test Select like")
+    for record in engine.select(Select(movie.all).where(movie.title.like("%dark%"))):
+        print(record)   
+        
     tplt._straightline("test Select distinct")
     for record in engine.select(Select([movie.genres]).distinct()):
+        print(record)
+        
+    tplt._straightline("test Select order by")
+    for record in engine.select(Select(movie.all).order_by(desc("movie_id")).limit(3)):
+        print(record)
+
+    tplt._straightline("test Select limit offset")
+    for record in engine.select(Select(movie.all).order_by("release_date").limit(3).offset(1)):
         print(record)
         
 # Engine_select_unittest()

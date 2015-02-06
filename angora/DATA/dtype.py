@@ -39,7 +39,7 @@ class OrderedSet(collections.MutableSet):
         if key in self.map:        
             key, prev, next_item = self.map.pop(key)
             prev[2] = next_item
-            next[1] = prev
+            next_item[1] = prev
 
     def __iter__(self):
         end = self.end
@@ -72,6 +72,24 @@ class OrderedSet(collections.MutableSet):
             return len(self) == len(other) and list(self) == list(other)
         return set(self) == set(other)
 
+    @staticmethod
+    def union(*argv):
+        """顺序以第一个orderedset为准
+        """
+        res = OrderedSet()
+        for ods in argv:
+            res = res | ods
+        return res
+    
+    @staticmethod
+    def intersection(*argv):
+        """顺序以第一个orderedset为准
+        """
+        res = OrderedSet(argv[0])
+        for ods in argv:
+            res = ods & res
+        return res
+    
 class StrSet(set):
     """set that all elements are string"""
     @staticmethod
@@ -82,8 +100,11 @@ class StrSet(set):
     @staticmethod
     def sqlite3_converter(_STRING):
         """类 -> 字符串 转换"""
-        return StrSet(_STRING.decode().split("&&"))
-    
+        try:
+            return StrSet(_STRING.decode().split("&&"))
+        except:
+            return StrSet(_STRING.split("&&"))
+        
 class IntSet(set):
     """set that all elements are integer"""
     @staticmethod
@@ -94,8 +115,11 @@ class IntSet(set):
     @staticmethod
     def sqlite3_converter(_STRING):
         """类 -> 字符串 转换"""
-        return IntSet([int(s) for s in _STRING.decode().split("&&")])
-    
+        try:
+            return IntSet([int(s) for s in _STRING.decode().split("&&")])
+        except:
+            return IntSet([int(s) for s in _STRING.split("&&")])
+        
 class StrList(list):
     """list that all elements are string"""
     @staticmethod
@@ -106,8 +130,11 @@ class StrList(list):
     @staticmethod
     def sqlite3_converter(_STRING):
         """类 -> 字符串 转换"""
-        return StrList(_STRING.decode().split("&&"))
-
+        try:
+            return StrList(_STRING.decode().split("&&"))
+        except:
+            return StrList(_STRING.split("&&"))
+        
 class IntList(list):
     """list that all elements are string"""
     @staticmethod
@@ -118,8 +145,11 @@ class IntList(list):
     @staticmethod
     def sqlite3_converter(_STRING):
         """类 -> 字符串 转换"""
-        return IntList([int(s) for s in _STRING.decode().split("&&")])
-
+        try:
+            return IntList([int(s) for s in _STRING.decode().split("&&")])
+        except:
+            return IntList([int(s) for s in _STRING.split("&&")])
+        
 if __name__ == "__main__":    
     def test_OrderedSet():
         def orderedSet_UT1():
@@ -135,14 +165,24 @@ if __name__ == "__main__":
         def orderedSet_UT2():
             print("{:=^30}".format("orderedSet_UT2"))
             s = OrderedSet('abracadaba') # {"a", "b", "r", "c", "d"}
-            t = OrderedSet('simsalabim') # {"s", "i", "m", "a", "l", "b"}
+            t = OrderedSet('simcsalabim') # {"s", "i", "m", "c", "a", "l", "b"}
             print(s | t) # s union t
             print(s & t) # s intersect t
             print(s - t) # s different t
-        
+
+        def orderedSet_UT3():
+            print("{:=^30}".format("orderedSet_UT3"))
+            r = OrderedSet('buag') # {"b", "u", "a", "g"}
+            s = OrderedSet('abracadaba') # {"a", "b", "r", "c", "d"}
+            t = OrderedSet('simcsalabim') # {"s", "i", "m", "c", "a", "l", "b"}
+
+            print(OrderedSet.union(r, s, t))
+            print(OrderedSet.intersection(r, s, t))
+            
         print("{:=^40}".format("test_OrderedSet"))
         orderedSet_UT1()
         orderedSet_UT2()
+        orderedSet_UT3()
         
 #     test_OrderedSet()
 
@@ -155,5 +195,5 @@ if __name__ == "__main__":
         l.append(4)
         print(l, type(l))
         
-    test_set_and_list()
+#     test_set_and_list()
     
