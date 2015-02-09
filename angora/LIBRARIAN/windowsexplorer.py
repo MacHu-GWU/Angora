@@ -228,7 +228,7 @@ class FileCollections():
     当然, 可以以迭代器的方式对容器内的文件对象进行访问。
     """
     def __init__(self):
-        self.files = dict() # {文件绝对路径: 包含各种详细信息的WinFile对象}
+        self.files = OrderedDict() # {文件绝对路径: 包含各种详细信息的WinFile对象}
     
     def __str__(self):
         if len(self.files) == 0:
@@ -322,7 +322,6 @@ class FileCollections():
         fcs = FileCollections()
         for abspath in WinExplorer._iterfiles(path):
             fcs.files[abspath] = WinFile(abspath)
-        fcs.sort_by("fname")
         return fcs
     
     @staticmethod
@@ -337,8 +336,6 @@ class FileCollections():
                     fcs_yes.files[winfile.abspath] = winfile
                 else:
                     fcs_no.files[winfile.abspath] = winfile
-            fcs_yes.sort_by("fname")
-            fcs_no.sort_by("fname")
             return fcs_yes, fcs_no
         else:
             fcs = FileCollections()
@@ -346,7 +343,6 @@ class FileCollections():
                 winfile = WinFile(abspath)
                 if criterion(winfile):
                     fcs.files[winfile.abspath] = winfile
-            fcs.sort_by("fname")
             return fcs
     
     ### useful recipe

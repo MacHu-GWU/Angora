@@ -24,16 +24,28 @@ class CSVFile():
     def __init__(self, path, 
                  table_name = None, 
                  sep = ",",
+                 header = None,
                  usecols = None,
                  dtype = dict(), 
-                 primary_key_columns = None):
+                 primary_key_columns = list()):
         self.path = path
         self.table_name = table_name
         self.sep = sep
+        if header:
+            self.header = 0
+        else:
+            self.header = None
         self.usecols = usecols
         self.dtype = dtype
-        self.primary_key_columns = primary_key_columns
-        
+        # 强行转化为字符串, 却表列index = 数据表中的列名, 且为合法字符串
+        self.primary_key_columns = list()
+        for i in primary_key_columns:
+            if not isinstance(i, str):
+                self.primary_key_columns.append("c" + str(i))
+            else:
+                self.primary_key_columns.append(i)
+
+
         self._read_metadata()
         self.timewrapper = None
         
@@ -61,10 +73,21 @@ class CSVFile():
         
         ### Read one row, and extract column information from csv
         if self.usecols:
-            df = pd.read_csv(self.path, sep=self.sep, nrows=1, dtype=pd_dtype, usecols=self.usecols)
+            df = pd.read_csv(self.path, sep=self.sep, header=self.header, 
+                             nrows=1, dtype=pd_dtype, usecols=self.usecols)
         else:
-            df = pd.read_csv(self.path, sep=self.sep, nrows=1, dtype=pd_dtype)
-            
+            df = pd.read_csv(self.path, sep=self.sep, header=self.header,
+                             nrows=1, dtype=pd_dtype)
+        
+        # 强行转化为字符串, 却表列index = 数据表中的列名, 且为合法字符串
+        new_columns = list()
+        for i in df.columns:
+            if not isinstance(i, str):
+                new_columns.append("c" + str(i))
+            else:
+                new_columns.append(i)
+        df.columns = new_columns
+        
         ### Define the right data type in database for each column
         for column_name, data_type in zip(df.columns, df.dtypes):
             if column_name not in db_dtype:
@@ -86,17 +109,18 @@ class CSVFile():
             else:
                 primary_key_flag = False
             columns.append(Column(column_name, db_dtype[column_name], primary_key=primary_key_flag))
-        
+            
         Table(self.table_name, self.metadata, *columns)
         self.table = self.metadata.tables[self.table_name]
-    
+
     def generate_records(self, chunksize=1000*1000):
         """generator for sqlite3 database friendly record from a data file
         """
         if self.usecols:
             for df in pd.read_csv(self.path, 
                                   sep=self.sep, 
-                                  dtype=self.pd_dtype, 
+                                  header=self.header,
+                                  dtype=self.pd_dtype,
                                   usecols=self.usecols, 
                                   iterator=True, 
                                   chunksize=chunksize):
@@ -110,7 +134,8 @@ class CSVFile():
                     yield record
         else:
             for df in pd.read_csv(self.path, 
-                                  sep=self.sep, 
+                                  sep=self.sep,
+                                  header=self.header,
                                   dtype=self.pd_dtype,
                                   iterator=True, 
                                   chunksize=chunksize):
