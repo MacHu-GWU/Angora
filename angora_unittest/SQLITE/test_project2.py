@@ -4,6 +4,7 @@ from __future__ import print_function
 from angora.SQLITE.core import MetaData, Sqlite3Engine, Table, Column, DataType, Row, Select
 from angora.DATA.dtype import StrSet, IntSet, StrList, IntList
 from collections import OrderedDict
+import datetime
 
 class MyClass():
     """a user customized class stored with document
@@ -21,6 +22,8 @@ datatype = DataType()
 
 pythontype = Table("pythontype", metadata,
     Column("uuid", datatype.integer, primary_key=True),
+    Column("date_type", datatype.date, default=datetime.date(1999,1,1)),
+    Column("datetime_type", datatype.datetime, default=datetime.datetime(2000,1,1,0,0,0)),
     Column("list_type", datatype.pythonlist, default=list()),
     Column("set_type", datatype.pythonset, default=set()),
     Column("dict_type", datatype.pythondict, default=dict()),
@@ -37,19 +40,18 @@ print(pythontype.create_table_sql())
 metadata.create_all(engine)
  
 ins = pythontype.insert()
-record = (1, 
-          [1,2,3], {1,2,3}, {1:"a", 2:"b", 3: "c"}, OrderedDict({1:"a", 2:"b", 3: "c"}),
-          StrSet(["a", "b", "c"]), IntSet([1, 2, 3]), StrList(["x", "y", "z"]), IntList([9, 8, 7]),
-          MyClass(1000))
-engine.insert_record(ins, record)
 
-# row = Row(["uuid"], [1])
-# engine.insert_row(ins, row)
+# record = (1, datetime.date(1999,1,1), datetime.datetime(2000,1,1,0,30,45), 
+#           [1,2,3], {1,2,3}, {1:"a", 2:"b", 3: "c"}, OrderedDict({1:"a", 2:"b", 3: "c"}),
+#           StrSet(["a", "b", "c"]), IntSet([1, 2, 3]), StrList(["x", "y", "z"]), IntList([9, 8, 7]),
+#           MyClass(1000))
+# engine.insert_record(ins, record)
+
+row = Row(["uuid"], [1])
+engine.insert_row(ins, row)
 
 for record in engine.execute("SELECT * FROM pythontype"):
     print(record)
-
 for record in engine.select(Select(pythontype.all)):
     print(record)
-    
 engine.prt_all(pythontype)

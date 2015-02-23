@@ -4,7 +4,7 @@ from __future__ import print_function
 from angora.PandasSQL.sqlite3blackhole import Sqlite3BlackHole, CSVFile
 
 def main():
-    bh = Sqlite3BlackHole("test.db") # define database
+    bh = Sqlite3BlackHole(":memory:") # define database
     # define first file
     advertisement = CSVFile(r"test_data/advertisement.txt", # path
                             table_name="advertisement", # table_name
@@ -35,10 +35,11 @@ def main():
     
     bh.engine.prt_howmany(advertisement.table)
     bh.engine.prt_howmany(employee1.table)
+    
     print(repr(advertisement.table))
     print(repr(employee1.table))
     
-main()
+# main()
 
 def non_primary_key():
     """没有primary_key的情况
@@ -90,4 +91,4 @@ def non_header():
     
     print(repr(employee1.table))
     
-non_header()
+# non_header()

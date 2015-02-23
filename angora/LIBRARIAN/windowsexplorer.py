@@ -104,14 +104,20 @@ class WinFile(object):
     def __init__(self, abspath):
         if os.path.isfile(abspath): # 确保这是一个文件而不是目录
             self.abspath = os.path.abspath(abspath)
-            self._initialize1()
+            self.initialize()
         else:
-            raise Exception("%s is not a file." % abspath)
+            raise Exception("%s is not a file or it doesn't exist." % abspath)
+
+    def initialize(self):
+        """method to initialize the value of some attributes
+        """
+        self.slow_initialize()
         
-    def _initialize1(self):
+    def slow_initialize(self):
         """从绝对路径中获得:
         目录名, 文件名, 纯文件名, 文件扩展名
         文件大小, access time, create time, modify time
+        预加载的内容较多, 速度较慢
         """
         self.dirname, self.basename = os.path.split(self.abspath) # 目录名, 文件名
         self.fname, self.ext = os.path.splitext(self.basename) # 纯文件名, 文件扩展名
@@ -122,12 +128,22 @@ class WinFile(object):
         self.ctime = os.path.getctime(self.abspath) # 创建时间, 当文件被修改后不变
         self.mtime = os.path.getmtime(self.abspath) # 修改时间
 
-    def _initialize2(self):
+    def fast_initialize(self):
         """从绝对路径中获得:
         目录名, 文件名, 纯文件名, 文件扩展名
+        预加载的内容较少, 速度较快
         """
         self.dirname, self.basename = os.path.split(self.abspath)
         self.fname, self.ext = os.path.splitext(self.basename)
+    
+    @staticmethod
+    def set_initialize_mode(fastmode=False):
+        """设置WinFile.initialize方法所绑定的初始化方式
+        """
+        if fastmode:
+            WinFile.initialize = WinFile.fast_initialize
+        else:
+            WinFile.initialize = WinFile.slow_initialize
     
     def __str__(self):
         return self.abspath
@@ -241,6 +257,12 @@ class FileCollections():
     def __len__(self):
         return len(self.files)
     
+    def __contains__(self, path):
+        if os.path.abspath(path) in self.files:
+            return True
+        else:
+            return False
+        
     def howmany(self):
         return len(self.files)
     
@@ -488,24 +510,40 @@ class WinExplorer(object):
             path = self.focus
         return self._itertopfiles(path)
         
-
+    ### useful receipt
+    def create_fake_mirror(self, src, dst):
+        """copy all dir, files from src to dst. But only create a empty file with same file name.
+        However, the tree structure doesn't change.
+        """
+        if not (os.path.exists(src) and (not os.path.exists(dst)) ):
+            raise Exception("source not exist or distination already exist")
+        self.locate(src)
+        self.scan_file()
+        
+        os.mkdir(dst)
+        for winfile in self.file_collections.values():
+            try:
+                os.makedirs(os.path.join(dst, os.path.relpath(winfile.dirname, src)))
+            except:
+                pass
+            with open(os.path.join(dst, os.path.relpath(winfile.abspath, src)), "w") as _:
+                pass
+    
 if __name__ == "__main__":
     def unittest_winfile():
         wf = WinFile("windowsexplorer.py")
         print(wf)
         
-#     unittest_winfile()
-
+    # unittest_winfile()
 
     def unittest_WinDir():
         wd = WinDir(r"C:\HSH\PythonWorkspace\py3\py33_projects\Angora")
         wd.prt_detail()
         
-#     unittest_WinDir()
-
+    # unittest_WinDir()
 
     def unittest_FileCollections():
-        entrance = r"C:\HSH\PythonWorkspace\py3\py33_projects\Angora"
+        entrance = r"C:\Users\shu\Documents\PythonWorkSpace\py3\py33_projects\Angora"
         
         def pythonfile_criterion(winfile): # 定义python文件筛选器
             if winfile.ext in [".py"]:
@@ -523,7 +561,7 @@ if __name__ == "__main__":
             print(fcs1)
             print(fcs1.howmany())
         
-#         basic_test()
+        # basic_test()
         
         ### 测试简便的静态方法
         def static_method_test():
@@ -539,20 +577,20 @@ if __name__ == "__main__":
             print("{:=^100}".format("fcs_from_folder_no"))
             print(fcs_from_folder_no.howmany())
         
-#         static_method_test()
+        # static_method_test()
         
         ### 测试使用功能
         def recipe_test():
             fcs = FileCollections.from_path(entrance)
             fcs.print_files_size_greater_than(1000)
         
-#         recipe_test()
+        # recipe_test()
         
-#     unittest_FileCollections()
+    # unittest_FileCollections()
 
 
     def unittest_WinExplorer():
-        entrance = r"C:\HSH\PythonWorkspace\py2\py27_projects\HSH-toolbox"
+        entrance = r"C:\Users\shu\Documents\PythonWorkSpace\py3\py33_projects\Angora"
         we = WinExplorer()
         we.locate(entrance)
         
@@ -564,7 +602,7 @@ if __name__ == "__main__":
             we.scan_dir() # 仅扫描目录
             print(we.dir_collections)
         
-#         basic_test()
+        # basic_test()
         
         ### 测试各种迭代器
         def iterator_method_test():
@@ -594,6 +632,13 @@ if __name__ == "__main__":
             for path in we.itertopfiles():
                 print(path)
     
-#         iterator_method_test()
+        # iterator_method_test()
         
-#     unittest_WinExplorer()
+        def create_fake_mirror_test(): # 测试文件夹伪拷贝功能
+            src = r"C:\Users\shu\Documents\PythonWorkSpace\py3\py33_projects\Angora"
+            dst = r"C:\Users\shu\Documents\PythonWorkSpace\py3\py33_projects\Angora_fake"
+            we.create_fake_mirror(src, dst)
+            
+        # create_fake_mirror_test()
+
+    # unittest_WinExplorer()

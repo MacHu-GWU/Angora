@@ -184,6 +184,10 @@ def Row_unittest():
     print(row.movie_id)
     print(row["title"])
     
+    # change row item
+    row["title"] = "good"
+    print(row)
+    
 # Row_unittest()
 
 def Insert_unittest():
@@ -234,7 +238,7 @@ def Engine_insert_unittest():
         engine.insert_row(ins,row)
         engine.prt_all(movie)
         
-#     test1()
+    test1()
     
     def test2():
         """测试批量插入的方法
@@ -326,9 +330,9 @@ def Engine_select_unittest():
 
     tplt._straightline("test Select limit offset")
     for record in engine.select(Select(movie.all).order_by("release_date").limit(3).offset(1)):
-        print(record)
+        print(record)    
         
-# Engine_select_unittest()
+Engine_select_unittest()
 
 def Update_unittest():    
     upd = movie.update().values( title = "ABCDEFG", 

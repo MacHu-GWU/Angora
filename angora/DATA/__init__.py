@@ -1,5 +1,6 @@
 ##encoding=utf8
 
+from .algorithm import binary_search
 from .dicttree import DictTree
 from .dtype import OrderedSet, StrSet, IntSet, StrList, IntList
 from .hashutil import md5_str, md5_obj, md5_file, hash_obj

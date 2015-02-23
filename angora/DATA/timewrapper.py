@@ -35,19 +35,20 @@ class TimeWrapper(object):
         pads = ["/", "-", " "]
         date_templates = list()
         
-        date_templates.append("%B %d, %Y") # September 20, 2014
-        
         for orders in itertools.permutations([year_formats, month_formats, day_formats], 3):
             for od in [(od0, od1, od2) for od0 in orders[0] for od1 in orders[1] for od2 in orders[2] ]:
                 for pad in pads:
                     date_templates.append(pad.join(od))
         
+        ## add datetime.date template here
+        date_templates.append("%B %d, %Y") # September 20, 2014
         
         self.date_templates = date_templates        # 日期的模板集合
         self.default_date_template = "%Y-%m-%d"     # 日期默认模板
         self.iso_dateformat = "%Y-%m-%d"            # 国际标准模板
         
         
+        ## add datetime.datetime template here
         self.datetime_templates = [ # 日期时间的模板集合
                                    "%Y-%m-%d %H:%M:%S", 
                                    "%Y-%m-%dT%H:%M:%S",

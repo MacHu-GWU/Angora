@@ -65,6 +65,8 @@ def hexstring2bytestr(hexstring):
 
 class Row():
     """
+    [CN]
+    [EN]
     """
     def __init__(self, columns, values):
         self.columns = columns
@@ -73,9 +75,19 @@ class Row():
     
     @staticmethod
     def from_dict(dictionary):
+        """
+        [EN]Generate a Row object from a python dictionary
+        [CN]从一个字典中生成Row对象
+        """
         return Row(list(dictionary.keys()), list(dictionary.values()))
     
     def _create_dict_view(self):
+        """
+        [CN]为了节约内存, 在初始化Row对象时仅仅是以两个列表的形式储存 column : value 信息。但是在
+        Row[column_name], Row.column_name, Row[column_name]=value, print(Row)的时候会自动从
+        columns, values中生成一个字典。这样在仅仅用于Insert的时候, 不需要创建字典, 可以直接传入
+        行tuple, 从而节约了计算量。
+        """
         self.dictionary_view = OrderedDict()
         for i, j in zip(self.columns, self.values):
             self.dictionary_view[i] = j
@@ -93,11 +105,20 @@ class Row():
             self._create_dict_view()
         return self.dictionary_view[key]
     
+    def __setitem__(self, key, value):
+        if not self.dictionary_view:
+            self._create_dict_view()
+        if key in self.dictionary_view:
+            self.dictionary_view[key] = value
+            self.columns = list(self.dictionary_view.keys())
+            self.values = list(self.dictionary_view.values())
+        else:
+            raise KeyError
+        
     def __getattr__(self, attr):
         if not self.dictionary_view:
             self._create_dict_view()
         return self.dictionary_view[attr]
-
 
 ##################################################
 #                                                #
@@ -106,9 +127,17 @@ class Row():
 ##################################################
 
 class Insert():
+    """
+    [CN]Insert对象可以通过Table.insert()命令生成。当我们执行:
+        Sqlite3Engine.insert_record时, 会执行Insert.sqlcmd_from_record以生成INSERT SQL命令
+        最后再执行cursor.execute(Insert.sqlcmd, Insert.default_record_converter(record))完成插入
+
+        Sqlite3Engine.insert_row时, 会执行Insert.sqlcmd_from_row(Row)以生成INSERT SQL命令
+        最后再执行cursor.execute(Insert.sqlcmd, Insert.default_row_converter(Row))完成插入
+    """
     def __init__(self, table):
         self.table = table
-        if len(table.pickletype_columns) == 0: # Define default record converter
+        if len(table.pickletype_columns) == 0: # Define default record/row converter
             self.default_record_converter = self.nonpicklize_record
             self.default_row_converter = self.nonpicklize_row
         else:
@@ -226,6 +255,8 @@ class Update():
         return self
     
     def where(self, *argv):
+        """define WHERE clause in UPDATE SQL command
+        """
         self.where_clause = "WHERE\n\t%s" % " AND\n\t".join([i.sqlcmd for i in argv])
         return self
     
@@ -388,6 +419,8 @@ class MetaData():
     
     ### ========== Reflect 方法所需的方法, 主要用来处理column中的default value ===========
     def _eval_converter(self, text):
+        """
+        """
         if text:
             return eval(text)
         else:
@@ -423,11 +456,24 @@ class MetaData():
     
     def reflect(self, engine):
         """read sqlite3 metadata, create the database schema.
+        [CN], 我们需要
+        讲其中的dtype
+
+        dtype_mapping:
+            执行engine.execute("PRAGMA table_info(table_name)")时会返回每列的column_dtype_name。
+            我们要将column_dtype_name对应到DATATYPE对象。
+
+        default_value_maping: 
+            执行engine.execute("PRAGMA table_info(table_name)")时会返回每列的default_value。
+            default_value是一个字符串。 例如:
+                列的default="foobar", 那么sqlite3的特殊表中储存的就是"'foobar'", 会多出来两个字符串标志。
+            所以我们要根据column_dtype_name使用不同的函数将default_value转换成原始的default, 也就是Python
+            对象。 
         """
         self.bind = engine
         dtype_mapping = {
             "TEXT": TEXT(), "INTEGER": INTEGER(), "REAL": REAL(), "DATE": DATE(), 
-            "DATETIME": DATETIME(), "BLOB": PICKLETYPE(),
+            "TIMESTAMP": DATETIME(), "BLOB": PICKLETYPE(),
             "PYTHONLIST": PYTHONLIST(), "PYTHONSET": PYTHONSET(),
             "PYTHONDICT": PYTHONDICT(), "ORDEREDDICT": ORDEREDDICT(),
             "STRSET": STRSET(), "INTSET": INTSET(),
@@ -437,7 +483,7 @@ class MetaData():
         default_value_mapping = {
             "TEXT": self._eval_converter, "INTEGER": self._eval_converter, 
             "REAL": self._eval_converter, "DATE": self._eval_converter, 
-            "DATETIME": self._eval_converter, "BLOB": self._blob_converter,
+            "TIMESTAMP": self._eval_converter, "BLOB": self._blob_converter,
             "PYTHONLIST": self._blob_converter, "PYTHONSET": self._blob_converter,
             "PYTHONDICT": self._blob_converter, "ORDEREDDICT": self._blob_converter,
             "STRSET": self._strset_converter, "INTSET": self._intset_converter,
@@ -493,7 +539,7 @@ class DATE(BaseDataType):
     
 class DATETIME(BaseDataType):
     name = "DATETIME"
-    sqlite_dtype_name = "DATETIME"
+    sqlite_dtype_name = "TIMESTAMP"
 
 ### 用户自定义类
 ### user customized data type

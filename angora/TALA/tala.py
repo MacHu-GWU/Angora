@@ -82,21 +82,21 @@ class _Searchable_DATE(SEARCHABLE_TYPE):
     """日期逻辑匹配"""
     name = "_Searchable_DATE"
     sqlite_dtype = datatype.date
-    sqlite_dtype_name = "Date"
+    sqlite_dtype_name = "DATE"
     is_pickletype = False
     
 class _Searchable_DATETIME(SEARCHABLE_TYPE):
     """日期时间逻辑匹配"""
     name = "_Searchable_DATETIME"
     sqlite_dtype = datatype.datetime
-    sqlite_dtype_name = "DateTime"
+    sqlite_dtype_name = "TIMESTAMP"
     is_pickletype = False
     
 class _Searchable_INTEGER(SEARCHABLE_TYPE):
     """整数逻辑匹配"""
     name = "_Searchable_INTEGER"
     sqlite_dtype = datatype.integer
-    sqlite_dtype_name = "Integer"
+    sqlite_dtype_name = "INTEGER"
     is_pickletype = False
     
 class _Searchable_REAL(SEARCHABLE_TYPE):
@@ -110,7 +110,7 @@ class _Unsearchable_OBJECT(SEARCHABLE_TYPE):
     """无法被搜索到, 可以储存任意python对象"""
     name = "_Unsearchable_OBJECT"
     sqlite_dtype = datatype.pickletype
-    sqlite_dtype_name = "PickleType"
+    sqlite_dtype_name = "PICKLETYPE"
     is_pickletype = True
     
 class FieldType():

@@ -187,12 +187,12 @@ if __name__ == "__main__":
 #     test_OrderedSet()
 
     def test_set_and_list():
-        s = StrSet([1,2,3])
-        s.add(4)
+        s = StrSet(["1", "2", "3"])
+        s.add("4")
         print(s, type(s))
         
-        l = StrList([1,2,3])
-        l.append(4)
+        l = StrList(["1", "2", "3"])
+        l.append("4")
         print(l, type(l))
         
 #     test_set_and_list()
