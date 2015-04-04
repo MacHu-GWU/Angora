@@ -1,4 +1,4 @@
-##encoding=utf8
+##encoding=UTF8
 
 """
 dicttree is a tree structure implementation in python built-in dictionary

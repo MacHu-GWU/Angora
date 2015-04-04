@@ -1,4 +1,4 @@
-##encoding=utf8
+##encoding=UTF8
 
 """
 [EN] A set of tools for data structure and data type

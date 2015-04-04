@@ -1,4 +1,4 @@
-##encoding=utf8
+##encoding=UTF8
 
 from .algorithm import binary_search
 from .dicttree import DictTree

@@ -1,4 +1,4 @@
-##encoding=utf8
+##encoding=UTF8
 
 """
 [EN]create a invert index dictionary from a regular index dictionary

@@ -455,62 +455,24 @@ class SearchEngine():
         else:
             pass
 
-    def search_legacy(self, query):
-        """根据query进行单元搜索, 返回record tuple
-        """
-        main_sqlcmd, main_sqlcmd_select_all, keyword_sqlcmd_list = query.create_sql()
-        
-        ### 情况1, 主表和倒排索引表都要被查询
-        if (len(keyword_sqlcmd_list) >= 1) and ("WHERE" in main_sqlcmd):
-            # 得到查询主表所筛选出的 result_uuid_set
-            result_uuid_set = {record[0] for record in self.engine.cursor.execute(main_sqlcmd) }
-
-            # 得到使用倒排索引所筛选出的 keyword_uuid_set
-            keyword_uuid_set = set.intersection(
-                *[self.engine.cursor.execute(sqlcmd).fetchone()[0] for sqlcmd in keyword_sqlcmd_list]
-                )
-            # 对两者求交集
-            result_uuid_set.intersection_update(keyword_uuid_set)
-            # 根据结果中的uuid, 去主表中取数据
-            for uuid in result_uuid_set:
-                record = self.engine.cursor.execute("SELECT * FROM {0} WHERE {1} = {2}".format(self.schema.schema_name,
-                                                                                               self.schema.uuid,
-                                                                                               repr(uuid),) ).fetchone()
-                yield record
-        
-        ### 情况2, 只对倒排索引表查询
-        elif (len(keyword_sqlcmd_list) >= 1) and ("WHERE" not in main_sqlcmd):
-            keyword_uuid_set = set.intersection(
-                *[self.engine.cursor.execute(sqlcmd).fetchone()[0] for sqlcmd in keyword_sqlcmd_list]
-                )
-            for uuid in keyword_uuid_set:
-                record = self.engine.cursor.execute("SELECT * FROM {0} WHERE {1} = {2}".format(self.schema.schema_name,
-                                                                                               self.schema.uuid,
-                                                                                               repr(uuid),) ).fetchone()
-                yield record
-        
-        ### 情况3, 只对主表查询
-        elif (len(keyword_sqlcmd_list) == 0) and ("WHERE" in main_sqlcmd):
-            for record in self.engine.cursor.execute(main_sqlcmd_select_all):
-                yield record
-        
-        ### 情况4, 空查询
-        else:
-            pass
-
     def search_document(self, query):
         """根据query进行单元搜索, 返回document ordereddict
         example: OrderedDict({field_name: field_value})
         """
+        counter = 0
         for record in self.search(query):
+            counter += 1
             document = OrderedDict()
             # pack up as a ordered dict
             for field_name, field, value in zip(self.schema.fields.keys(), 
                                                 self.schema.fields.values(), 
                                                 record):    
                 document[field_name] = value
-            yield document
-    
+            if counter <= query.limit_number:
+                yield document
+            else:
+                return
+            
     ### =================== 语法糖方法 =========================
     def _get_all_valid_keyword(self, field_name):
         """私有函数, 用于支持Engine.display_valid_keyword, Engine.search_valid_keyword功能
@@ -582,7 +544,8 @@ class SearchEngine():
         print("Found %s valid keywords with pattern %s in %s" % (len(result), 
                                                                  pattern, 
                                                                  field_name))
-
+        return result
+    
     def help(self):
         """print help information"""
         text = \
@@ -729,6 +692,7 @@ class Query():
         
         self.orderby_clause = None
         self.limit_clause = None
+        self.limit_number = 20
         self.offset_clause = None
         
         self.query_equal = QueryEqual
@@ -797,7 +761,8 @@ class Query():
         
     def limit(self, howmany):
         self.limit_clause = "LIMIT %s" % howmany
-
+        self.limit_number = howmany
+        
     def offset(self, howmany):
         self.offset_clause = "OFFSET %s" % howmany
 
@@ -833,13 +798,11 @@ class Query():
         main_sqlcmd_select_uuid = "\n\t".join([i for i in [select_uuid_clause,
                                                            where_clause,
                                                            self.orderby_clause,
-                                                           self.limit_clause,
                                                            self.offset_clause] if i ])  
 
         main_sqlcmd_select_all = "\n\t".join([i for i in [select_all_clause,
                                                           where_clause,
                                                           self.orderby_clause,
-                                                          self.limit_clause,
                                                           self.offset_clause] if i ])  
         ### SQL command for the invert index table (which table_name = Engine.keyword_fields)
         keyword_sqlcmd_list = list()
@@ -851,46 +814,4 @@ class Query():
                 keyword_sqlcmd_list.append(select_clause + from_clause + where_clause)
         
         return main_sqlcmd_select_uuid, main_sqlcmd_select_all, keyword_sqlcmd_list
-    
-    def create_sql_legacy(self):
-        """生成对主表进行查询的SQL语句和若干个对倒排索引表查询的SQL语句
-        create one SQL command for the main_table and create several SQL command for invert index
-        table
-        """
-        sql_criterions, keyword_criterions = self._split_SqlCriterions_and_KeywordCriterions()
-        
-        ### SQL command for the main table (which table_name = Engine.schema_name)
-        select_clause = "SELECT\t{0}\n".format(self.schema.uuid)
-        select_clause_all = "SELECT\t*\n"
-        
-        from_clause = "FROM\t{0}\n".format(self.schema.schema_name)
-        if len(sql_criterions) >= 1:
-            where_clause = "WHERE\t" + "\n\tAND ".join([str(criterion) for criterion in sql_criterions])
-        else:
-            where_clause = ""
-
-
-        main_sqlcmd = "\n\t".join([i for i in [select_clause,
-                                               from_clause,
-                                               where_clause,
-                                               self.orderby_clause,
-                                               self.limit_clause,
-                                               self.offset_clause] if i ])  
-
-        main_sqlcmd_select_all = "\n\t".join([i for i in [select_clause_all,
-                                                          from_clause,
-                                                          where_clause,
-                                                          self.orderby_clause,
-                                                          self.limit_clause,
-                                                          self.offset_clause] if i ])  
-        ### SQL command for the invert index table (which table_name = Engine.keyword_fields)
-        keyword_sqlcmd_list = list()
-        for criterion in keyword_criterions:
-            for keyword in criterion.subset:
-                select_clause = "SELECT\t{0}\n".format("uuid_set")
-                from_clause = "FROM\t{0}\n".format(criterion.field_name)
-                where_clause = "WHERE\t{0} = {1}".format("keyword", repr(keyword))
-                keyword_sqlcmd_list.append(select_clause + from_clause + where_clause)
-        
-        return main_sqlcmd, main_sqlcmd_select_all, keyword_sqlcmd_list
     

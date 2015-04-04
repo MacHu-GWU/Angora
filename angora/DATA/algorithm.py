@@ -1,4 +1,4 @@
-##encoding=UTF-8
+##encoding=UTF8
 
 from __future__ import print_function
 

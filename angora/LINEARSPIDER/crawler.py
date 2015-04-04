@@ -13,8 +13,8 @@ import:
 """
 
 from __future__ import print_function
-from bs4 import BeautifulSoup as BS4
-try: # if doens't have pandas, ProxyManager will not work
+try: # if doens't have beautifulsoup and pandas, ProxyManager will not work
+    from bs4 import BeautifulSoup as BS4
     import pandas as pd
 except:
     pass    

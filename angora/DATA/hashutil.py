@@ -1,4 +1,4 @@
-##encoding=utf8
+##encoding=UTF8
 
 """
 This module is re-pack of some hashlib utility functions
