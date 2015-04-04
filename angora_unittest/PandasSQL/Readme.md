@@ -1,10 +1,11 @@
 #PandasSQL tutorial
 ------
-PandasSQL is a light and powerful tools to load data from csv file and save to database.
+
+PandasSQL is a light and convenient tools to load data from csv file and save to database.
 
 ###Define database
 
-	from angora.PandasSQL.sqlite3blackhole import Sqlite3BlackHole, CSVFile
+	from angora.PandasSQL.sqlite3blackhole import CSVFile, Sqlite3BlackHole
 	bh = Sqlite3BlackHole(":memory:") # define database
 
 ###Define csv file

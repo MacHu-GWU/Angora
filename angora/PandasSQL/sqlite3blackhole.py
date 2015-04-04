@@ -1,4 +1,4 @@
-##encoding=utf8
+##encoding=UTF8
 
 """
 author: Sanhe Hu
@@ -8,7 +8,7 @@ compatibility: python3 ONLY
 prerequisites: angora.SQLITE
 
 import:
-    from angora.PandasSQL.sqlite3blackhole import Sqlite3BlackHole, CSVFile
+    from angora.PandasSQL.sqlite3blackhole import CSVFile, Sqlite3BlackHole
 
 """
 from __future__ import print_function
@@ -20,6 +20,26 @@ import pandas as pd, numpy as np
 
 class CSVFile():
     """a CSV datafile class
+    [args]
+    ------
+    path: 
+        csv file absolute path
+    table_name: 
+        the table name you map the csv data to
+    sep: 
+        csv seperator, default ','
+    header: 
+        has header?
+    usecols:
+        a index list tells which columns you want to use. for example [1, 4, 5] means
+        you only use the second, fifth and sixth columns
+    dtype:
+        define the data type for each columns in a dictionary. valid dtypes are: 
+            TEXT, INTEGER, REAL, DATE, DATETIME
+        example: {"column_name1": "TEXT", "column_name2": "INTEGER"}
+    primary_key_columns:
+        a index list tells which columns are primary keys. for example you use [1, 4, 5] for 
+        usecols. and you use [2] for primary_key_columns. means the sixth columns is primary key.
     """
     def __init__(self, path, 
                  table_name = None, 
@@ -37,14 +57,13 @@ class CSVFile():
             self.header = None
         self.usecols = usecols
         self.dtype = dtype
-        # 强行转化为字符串, 却表列index = 数据表中的列名, 且为合法字符串
+        # 强行转化为字符串, 确定表列index = 数据表中的列名, 且为合法字符串
         self.primary_key_columns = list()
         for i in primary_key_columns:
             if not isinstance(i, str):
                 self.primary_key_columns.append("c" + str(i))
             else:
                 self.primary_key_columns.append(i)
-
 
         self._read_metadata()
         self.timewrapper = None
@@ -149,6 +168,25 @@ class CSVFile():
                     yield record
                     
 class Sqlite3BlackHole():
+    """a CSV data to Sqlite3 database engine. Can take data into database in two mode:
+    1. devour: map CSV file to a table, if meet sqlite3.IntegrityError, skip it
+    2. update: unlike devour, if meet sqlite3.IntegrityError, update the data entry
+    That's why I call it BlackHole.
+    
+    the typical usage is:
+    
+        sqlite3blackhole = Sqlite3BlackHole("your_sqlite3_database_name.db")
+        csvfile = CSVFile(r"test_data/employee1.txt",
+                           table_name="employee",
+                           sep=",",
+                           header=True,
+                           dtype={"employee_id": "TEXT", "start_date": "DATE"},
+                           primary_key_columns=["employee_id"])   
+        sqlite3blackhole.add(csvfile)
+        ... add more file
+        sqlite3blackhold.devour()
+        
+    """
     def __init__(self, dbname):
         self.engine = Sqlite3Engine(dbname)
         self.metadata = MetaData()

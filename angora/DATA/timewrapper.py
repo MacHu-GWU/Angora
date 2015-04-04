@@ -47,7 +47,7 @@ class NoMatchingTemplateError(Exception):
         
     def __str__(self):
         return "None template matching '%s'" % self.pattern
-    
+
 class TimeWrapper(object):
     """时间包装器 是一个智能处理多种日期, 时间日期格式的转换器
     """
@@ -75,7 +75,7 @@ class TimeWrapper(object):
         self.datetime_templates.append("%Y-%m-%dT%H:%M:%S") # "2014-01-15T17:58:31"
         self.datetime_templates.append("%Y-%m-%d") # "2014-01-15"
         self.datetime_templates.append("%y%m%d%H") # "2014011517"
-        self.datetime_templates.append("%Y-%m-%d %I:%M:%S %p") # 1/15/2014 5:58:31 PM
+        self.datetime_templates.append("%Y-%m-%d %I:%M:%S %p") # 2014-01-15 5:58:31 PM
         self.datetime_templates.append("%m/%d/%Y %I:%M:%S %p") # 1/15/2014 5:58:31 PM
         
         
@@ -241,7 +241,6 @@ class TimeWrapper(object):
         except:
             raise Exception("%s is invalid format. use day, hour, min, sec." % freq)
         
-        
     def dtime_range(self, start=None, end=None, periods=None, freq="1day", normalize=False):
         """a pure Python implementation of pandas.date_range()
         given 2 of start, end, periods and freq, generate a series of datetime object.
@@ -259,7 +258,6 @@ class TimeWrapper(object):
                 Frequency strings can have multiples, e.g. ‘5hour
             normalize : bool, default False
                 Normalize start/end dates to midnight before generating date range
-        
         """
         def normalize_datetime_to_midnight(dtime):
             """normalize a datetime %Y-%m-%d %H:%M:%S to %Y-%m-%d 00:00:00
@@ -270,8 +268,8 @@ class TimeWrapper(object):
             """do not normalize
             """
             return dtime
-            
-        if (bool(start) + bool(end) + bool(periods)) == 2:
+        
+        if (bool(start) + bool(end) + bool(periods)) == 2: # if two of start, end, or periods exist
             if normalize:
                 converter = normalize_datetime_to_midnight
             else:
@@ -279,34 +277,45 @@ class TimeWrapper(object):
             
             interval = self._freq_parser(freq)
             
-            if (bool(start) & bool(end)):
-                start_datetime = self.str2datetime(start)
-                end_datetime = self.str2datetime(end)
-                start_datetime = start_datetime - interval
+            if (bool(start) & bool(end)): # start and end
+                if isinstance(start, str): # if str, convert to datetime
+                    start = self.str2datetime(start)
+                elif not isinstance(start, dt): 
+                    raise Exception("start has to be datetime str or datetime")
+                if isinstance(end, str): # if str, convert to datetime
+                    end = self.str2datetime(end)
+                elif not isinstance(end, dt): 
+                    raise Exception("end has to be datetime str or datetime")
+                start = start - interval
                 for _ in range(1000**3):
-                    start_datetime += interval
-                    if start_datetime <= end_datetime:
-                        yield converter(start_datetime)
+                    start += interval
+                    if start <= end:
+                        yield converter(start)
                     else:
                         break
-            elif (bool(start) & bool(periods)):
-                start_datetime = self.str2datetime(start)
-                start_datetime = start_datetime - interval
+            elif (bool(start) & bool(periods)): # start and periods
+                if isinstance(start, str): # if str, convert to datetime
+                    start = self.str2datetime(start)
+                elif not isinstance(start, dt): 
+                    raise Exception("start has to be datetime str or datetime")
+                start = start - interval
                 for _ in range(periods):
-                    start_datetime += interval
-                    yield converter(start_datetime)
-            elif (bool(end) & bool(periods)):
-                end_datetime = self.str2datetime(end)
-                end_datetime = end_datetime + interval
+                    start += interval
+                    yield converter(start)
+            elif (bool(end) & bool(periods)): # end and periods
+                if isinstance(end, str): # if str, convert to datetime
+                    end = self.str2datetime(end)
+                elif not isinstance(end, dt): 
+                    raise Exception("end has to be datetime str or datetime")
+                start = end - interval * periods
                 for _ in range(periods):
-                    end_datetime -= interval
-                    yield converter(end_datetime)              
+                    start += interval
+                    yield converter(start)              
         else:
             raise Exception("Must specify two of start, end, or periods")
         
 if __name__ == "__main__":
     import unittest
-    
     class TimeWrapperUnittest(unittest.TestCase):
         def setUp(self):
             self.tw = TimeWrapper()
@@ -340,11 +349,9 @@ if __name__ == "__main__":
             self.assertEqual(self.tw.year_interval(2014),
                 ("2014-01-01 00:00:00", "2014-12-31 23:59:59")
                 )
-            # datetime mode
             self.assertEqual(self.tw.year_interval(2014, mode="datetime"),
                 (dt(2014,1,1,0,0,0), dt(2014,12,31,23,59,59))
                 )
-            # wrong mode
             self.assertRaises(ModeError, self.tw.year_interval, 2014, mode="good")
         
         def test_str2date(self):
@@ -357,69 +364,32 @@ if __name__ == "__main__":
             self.assertEqual(self.tw.isodatetimestr("2014-07-03 8:12:34"), "2014-07-03 08:12:34")
             self.assertEqual(self.tw.isodatetimestr("2014-07-03 8:12:34 PM"), "2014-07-03 20:12:34")
             self.assertRaises(NoMatchingTemplateError, self.tw.isodatetimestr, "[2014][07][03]")
+        
+        def test_dtime_range(self):
+            # test start + end
+            self.assertEqual([dt(2014,1,1,3,0,0), dt(2014,1,1,3,5,0), dt(2014,1,1,3,10,0)],
+                list(self.tw.dtime_range(start="2014-01-01 03:00:00", 
+                                    end="2014-01-01 03:10:00", 
+                                    freq="5min"))
+                )
+            # test start + periods
+            self.assertEqual([dt(2014,1,1,3,0,0), dt(2014,1,1,3,5,0), dt(2014,1,1,3,10,0)],
+                list(self.tw.dtime_range(start="2014-01-01 03:00:00", 
+                                    periods=3, 
+                                    freq="5min"))
+                )
+            # test end + periods
+            self.assertEqual([dt(2014,1,1,3,0,0), dt(2014,1,1,3,5,0), dt(2014,1,1,3,10,0)],
+                list(self.tw.dtime_range(end="2014-01-01 03:10:00",
+                                    periods=3,
+                                    freq="5min"))
+                )
+            # test take datetime as input
+            self.assertEqual([dt(2014,1,1,3,0,0), dt(2014,1,1,3,5,0), dt(2014,1,1,3,10,0)],
+                list(self.tw.dtime_range(start=dt(2014,1,1,3,0,0), 
+                                    end=dt(2014,1,1,3,10,0), 
+                                    freq="5min"))
+                )
             
     unittest.main()
-
     
-    def UT1():
-        """测试 时间区间生成器
-        """
-        print("{:=^40}".format("UT1"))
-        print(TimeWrapper.day_interval(2012, 2, 29, mode = "str") )
-        print(TimeWrapper.month_interval(2014, 12, mode = "str") )
-        print(TimeWrapper.year_interval(1999, mode = "str") )
-        
-#     UT1()
-    
-    def UT2():
-        """测试 人工模式 日期格式转换
-        """
-        print("{:=^40}".format("UT2"))
-        timewrapper = TimeWrapper()
-        print(timewrapper.reformat("2/21/1998", "%m/%d/%Y", "%Y-%m-%d") )
-        try:
-            print(timewrapper.reformat("Feb/21/1998", "%m/%d/%Y", "%Y-%m-%d") )
-        except Exception as e:
-            print(e)
-            
-#     UT2()
-
-    def UT3():
-        """测试 自动模式 日期格式转换
-        """
-        print("{:=^40}".format("UT3"))
-        timewrapper = TimeWrapper()
-        
-        todo = ["Feb/21/1998", "Dec/12/1998", "08/07/2014",
-                "August 15, 2013"]
-        for s in todo:
-            print("%s parsed as %s" % (s, timewrapper.str2date(s) ) )
-        
-#     UT3()
-
-    def UT4():
-        """测试 自动模式 时间日期格式转换
-        """
-        print("{:=^40}".format("UT4"))
-        timewrapper = TimeWrapper()
-        
-        todo = ["2014-01-15 06:30:12", "2014-01-20T03:11:43", 
-                "3/1/2014 12:00:00 AM", 
-                "2014-03-20 23:47:50Z003"]
-        for s in todo:
-            print("%s parsed as %s" % (s, timewrapper.str2datetime(s) ) )
-            
-#     UT4()
-
-    def UT5():
-        timewrapper = TimeWrapper()
-        for example in timewrapper.dtime_range(
-                                                start="2014-01-01 1:00:00", 
-                                                end="2014-01-03 23:00:00", 
-#                                                 periods=10,
-                                                freq="5min",
-#                                                 normalize=True,
-                                               ):
-            print(example)
-            
-#     UT5()

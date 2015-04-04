@@ -1,4 +1,4 @@
-##encoding=utf8
+##encoding=UTF8
 
 """
 A Linear Link Extractor Scheduler automatically handle:

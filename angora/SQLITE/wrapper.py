@@ -1,4 +1,4 @@
-##encoding=utf8
+##encoding=UTF8
 
 def iterC(cursor, arraysize = 1000):
     "An iterator that uses fetchmany to keep memory usage lower"

@@ -1,5 +1,5 @@
 ##################################
-#encoding=utf8                   #
+#encoding=UTF8                 #
 #version =py27, py33             #
 #author  =sanhe                  #
 #date    =2015-01-01             #
@@ -82,7 +82,7 @@ def import_help():
     
     SQLITE_modules = [
     """from angora.SQLITE.core import (MetaData, Sqlite3Engine, Table, Column, DataType, Row, 
-    _and, _or, desc, Select)"""                  
+    _and, _or, desc, Select)""",           
     ]
     print("\n{:=^100}".format("angora.SQLITE"))
     print("\n".join(SQLITE_modules))
@@ -90,7 +90,8 @@ def import_help():
     GADGET_modules = [
     "from angora.GADGET.logger import Messenger, Log",
     "from angora.GADGET.logicflow import tryit",
-    "from angora.GADGET.pytimer import Timer"
+    "from angora.GADGET.pytimer import Timer",
+    "from angora.GADGET.config import Configuration",
     ]
     print("\n{:=^100}".format("angora.GADGET"))
     print("\n".join(GADGET_modules))
@@ -110,7 +111,7 @@ def import_help():
     print("\n".join(LINEARSPIDER_modules))
     
     PandasSQL_modules = [
-    "from .sqlite3blackhole import Sqlite3BlackHole, CSVFile",
+    "from .sqlite3blackhole import CSVFile, Sqlite3BlackHole",
     ]
     print("\n{:=^100}".format("angora.PandasSQL"))
     print("\n".join(PandasSQL_modules))
@@ -128,10 +129,3 @@ def import_help():
     print("\n{:=^100}".format("angora.TALA"))
     print("\n".join(TALA_modules))
     
-
-    
-
-    
-
-
-

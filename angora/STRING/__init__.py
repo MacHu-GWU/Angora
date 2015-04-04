@@ -1,4 +1,4 @@
-##encoding=utf8
+##encoding=UTF8
 
 from .formatmaster import FormatMaster, Template, Converter
 try:

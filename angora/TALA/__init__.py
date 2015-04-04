@@ -1,3 +1,3 @@
-##encoding=utf8
+##encoding=UTF8
 
 from .tala import FieldType, Field, Schema, SearchEngine

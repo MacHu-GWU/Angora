@@ -1,4 +1,4 @@
-##encoding=utf8
+##encoding=UTF8
 
 """
 Messenger
@@ -127,6 +127,4 @@ if __name__ == "__main__":
         messenger.on()
         messenger.show("hello world")
         
-    Messenger_test()
-        
-        
+    Messenger_test()        

@@ -1,4 +1,4 @@
-##encoding=utf8
+##encoding=UTF8
 
 """
 一些winzip压缩的实用工具

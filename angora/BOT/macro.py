@@ -1,4 +1,4 @@
-##encoding=utf8
+##encoding=UTF8
 
 """
 本模组用于调用常用的键盘鼠标宏命令

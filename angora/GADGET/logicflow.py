@@ -1,4 +1,4 @@
-##encoding=utf8
+##encoding=UTF8
 
 """
 compatibility: compatible to python2 and python3

@@ -1,6 +1,12 @@
-##encoding=utf8
+##encoding=UTF8
 
 """
+author: Sanhe Hu
+
+compatibility: python2, python3 
+
+prerequisites: fuzzywuzzy
+
 import:
     from angora.STRING.stringmatch import StrMatcher
 """

@@ -1,4 +1,4 @@
-##encoding=utf8
+##encoding=UTF8
 
 """
 [En]If you run this file as the main script.

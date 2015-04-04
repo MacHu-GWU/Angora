@@ -1,4 +1,4 @@
-##encoding=utf8
+##encoding=UTF8
 
 from __future__ import print_function
 from scipy.interpolate import interp1d

@@ -150,7 +150,7 @@ class IntList(list):
         except:
             return IntList([int(s) for s in _STRING.split("&&")])
         
-if __name__ == "__main__":    
+if __name__ == "__main__":
     def test_OrderedSet():
         def orderedSet_UT1():
             print("{:=^30}".format("orderedSet_UT1"))

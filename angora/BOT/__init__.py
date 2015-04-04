@@ -1,4 +1,4 @@
-##encoding=utf8
+##encoding=UTF8
 
 try:
     from .macro import Bot

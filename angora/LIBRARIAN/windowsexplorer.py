@@ -1,4 +1,4 @@
-##encoding=utf8
+##encoding=UTF8
 
 """在python2中, 若路径有非ascii字符, 会带来许多错误, 所以本模组最好在python3环境中使用
 本模组是对于windows中的directory和file系统, 提供了多种:

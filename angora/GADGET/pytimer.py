@@ -1,7 +1,6 @@
-##encoding=utf8
+##encoding=UTF8
 
 """
-
 pytimer
 -------
     一个用于测量代码运行时间的小工具

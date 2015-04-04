@@ -1,4 +1,4 @@
-##encoding=utf8
+##encoding=UTF8
 
 """Http Crawler
 Repack of requests
