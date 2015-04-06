@@ -29,6 +29,9 @@ class Template():
 
 
 class Converter():
+    def strip_formatter(self, text):
+        return text.strip()
+    
     def person_name_formatter(self, text):
         """将字符串转换为首字母大写, 其他字母小写的, 非严格英文句子格式。单词之间的空格会被标准化为长度1。
         注意: 一些国家, 名字之类的本应大写的单词可能会被转化成小写。

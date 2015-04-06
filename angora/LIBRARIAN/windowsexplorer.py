@@ -85,7 +85,8 @@ class WinFile(object):
         self.atime    最后一次触碰的时间
         self.ctime    文件被创建的时间
         self.mtime    文件最后一次被修改的时间
-        
+        self.size_on_disk 文件在硬盘上的大小, 单位bytes
+
     The difference of: 
         access time (os.path.getatime)
         create time (os.path.getctime)
@@ -262,7 +263,35 @@ class FileCollections():
             return True
         else:
             return False
-        
+    
+    def add(self, path_or_winfile):
+        """add absolute path or WinFile to FileCollections
+        """
+        if isinstance(path_or_winfile, str): # path
+            if path_or_winfile in self.files:
+                print("%s already in this collections" % path_or_winfile)
+            else:
+                self.files.setdefault(path_or_winfile, WinFile(path_or_winfile))
+        else: # WinFile
+            if path_or_winfile.abspath in self.files:
+                print("%s already in this collections" % path_or_winfile.abspath)
+            else:
+                self.files.setdefault(path_or_winfile.abspath, path_or_winfile)
+                
+    def remove(self, path_or_winfile):
+        """remove absolute path or WinFile from FileCollections
+        """
+        if isinstance(path_or_winfile, str): # path
+            try:
+                del self.files[path_or_winfile]
+            except:
+                print("%s are not in this file collections" % path_or_winfile)
+        else: # WinFile
+            try:
+                del self.files[path_or_winfile.abspath]
+            except:
+                print("%s are not in this file collections" % path_or_winfile.abspath)
+                
     def howmany(self):
         return len(self.files)
     
@@ -367,10 +396,13 @@ class FileCollections():
                     fcs.files[winfile.abspath] = winfile
             return fcs
     
-    ### useful recipe
+    #################
+    # Useful recipe #
+    #################
     def print_files_size_greater_than(self, threshold):
+        self._threshold = threshold
         def bigfile_criterion(winfile):
-            if winfile.size_on_disk >= threshold:
+            if winfile.size_on_disk >= self._threshold:
                 return True
             else:
                 return False
@@ -380,7 +412,19 @@ class FileCollections():
         for winfile in fcs.iterfiles():
             print("%s - %s" % (string_SizeInBytes(winfile.size_on_disk), winfile))
         print("\tAbove is all files size greater than %s." % string_SizeInBytes(threshold))
-        
+    
+    def print_files_has_text(self, text):
+        self._text = text
+        def text_criterion(winfile):
+            if self._text in winfile.fname:
+                return True
+            else:
+                return False
+
+        fcs = self.select(text_criterion)
+        fcs.sort_by("fname")
+        for winfile in fcs.iterfiles():
+            print(winfile)
         
 class WinExplorer(object):
     """Windows文件浏览器, 提供了
@@ -510,7 +554,9 @@ class WinExplorer(object):
             path = self.focus
         return self._itertopfiles(path)
         
-    ### useful receipt
+    #################
+    # Useful recipe #
+    #################
     def create_fake_mirror(self, src, dst):
         """copy all dir, files from src to dst. But only create a empty file with same file name.
         However, the tree structure doesn't change.
@@ -529,7 +575,54 @@ class WinExplorer(object):
             with open(os.path.join(dst, os.path.relpath(winfile.abspath, src)), "w") as _:
                 pass
     
+
 if __name__ == "__main__":
+    import unittest
+    
+    class WinfileTest(unittest.TestCase):
+        def setUp(self):
+            pass
+
+        def test_initial(self):
+            winfile = WinFile("windowsexplorer.py")
+            self.assertEqual("windowsexplorer", winfile.fname)
+            self.assertEqual(".py", winfile.ext)
+            self.assertEqual("windowsexplorer.py", winfile.basename)
+            self.assertIn(r"angora\LIBRARIAN", winfile.dirname)
+            print(winfile.size_on_disk)
+            print(winfile.atime)
+            print(winfile.ctime)
+            print(winfile.mtime)
+
+    class FileCollectionsTest(unittest.TestCase):
+        def setUp(self):
+            self.python_dir_list = [r"C:\Python27\libs", r"C:\Python33\libs", r"C:\Python34\libs"]
+
+
+        def test_print_files_has_text(self):
+            for path in self.python_dir_list:
+                try:
+                    fc = FileCollections.from_path(path)
+                    fc.print_files_has_text("python")
+                    break
+                except:
+                    pass
+
+    class WindowsExplorerTest(unittest.TestCase):
+        def setUp(self):
+            self.python_dir_list = [r"C:\Python27\libs", r"C:\Python33\libs", r"C:\Python34\libs"]
+            
+        def test_search_by_text(self):
+            for path in self.python_dir_list:
+                try:
+                    fc = FileCollections.from_path(path)
+                    fc.print_files_has_text("python")
+                    break
+                except:
+                    pass
+
+    unittest.main()
+    
     def unittest_winfile():
         wf = WinFile("windowsexplorer.py")
         print(wf)
@@ -642,3 +735,4 @@ if __name__ == "__main__":
         # create_fake_mirror_test()
 
     # unittest_WinExplorer()
+    

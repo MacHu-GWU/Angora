@@ -377,8 +377,12 @@ class SearchEngine():
             row = Row(columns, values)
         
             # 更新主表的数据
-            self.engine.insert_row(ins, row)
+            try:
+                self.engine.insert_row(ins, row)
+            except:
+                pass
             
+            # 计算倒排索引
             for keyword_field in self.schema.keyword_fields:
                 uuid = document[self.schema.uuid]
                 for keyword in document[keyword_field]:
