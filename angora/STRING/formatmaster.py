@@ -6,12 +6,19 @@ import:
 """
 
 from __future__ import print_function
-
+import random
 
 class Template():
     """用于从模板产生字符串, 或者直接打印产生的字符串
     以 "_" 开头的方法都是直接打印产生的字符串
     """
+    def __init__(self):
+        self.alphalower = list("abcdefghijklmnopqrstuvwxyz")
+        self.alphaupper = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+        self.digit = list("0123456789")
+        self.symbol = list("!@#$%^&*()")
+        self.alnum = list("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+                
     def straightline(self, title, length = 100, linestyle = "="):
         """长度为length, 中间文字是title, 线型是linestyle"""
         text = "{:%s^%s}" % (linestyle, length)
@@ -26,8 +33,15 @@ class Template():
 
     def _pad_indent(self, text, num_of_indent = 1):
         print(self.pad_indent(text = text, num_of_indent = num_of_indent))
-
-
+    
+    def randstr(self, length):
+        """generate random x-length alpha number string
+        """
+        s = []
+        for _ in range(length): # naive method
+            s.append(random.choice(self.alnum))
+        return "".join(s)
+    
 class Converter():
     def strip_formatter(self, text):
         return text.strip()
@@ -115,15 +129,17 @@ class FormatMaster():
 
 if __name__ == "__main__":
     fm = FormatMaster()
-
+    
     def FormatMaster_Template_unittest():
         print(fm.template.straightline("straight line", 60, "-"))
         fm.template._straightline("straight line", 60, "-")
 
         print(fm.template.pad_indent("some message", 2))
         fm.template._pad_indent("some message", 2)
-         
-    FormatMaster_Template_unittest()
+        
+        print(fm.template.randstr(32))
+        
+#     FormatMaster_Template_unittest()
     
     def FormatMaster_Converter_unittest():
         testdata = [
@@ -153,5 +169,5 @@ if __name__ == "__main__":
         print("%s => %s" % (testdata, 
                             fm.convert_list(fm.converter.person_name_formatter, testdata) ) )
         
-    FormatMaster_Converter_unittest()
+#     FormatMaster_Converter_unittest()
     

@@ -65,8 +65,9 @@ def hexstring2bytestr(hexstring):
 
 class Row():
     """
-    [CN]
-    [EN]
+    [CN]数据表中的行数据类。 可以使用索引Row[column_name]或是属性Row.column_name的方式对数据进行访问。
+    [EN]An abstract class for row object in database table. Values can be visit by it's column name
+    in two way: Row[column_name], Row.column_name
     """
     def __init__(self, columns, values):
         self.columns = columns
@@ -91,7 +92,7 @@ class Row():
         self.dictionary_view = OrderedDict()
         for i, j in zip(self.columns, self.values):
             self.dictionary_view[i] = j
-            
+
     def __str__(self):
         if not self.dictionary_view:
             self._create_dict_view()
@@ -1132,6 +1133,15 @@ class Sqlite3Engine():
             row = Row(select_obj.column_names, record)
             yield row
     
+    def select_column(self, select_obj):
+        """返回一个封装好的列表
+        """
+        dataframe = {column_name: list() for column_name in select_obj.column_names}
+        for record in self.cursor.execute(select_obj.toSQL()):
+            for column_name, value in zip(select_obj.column_names, record):
+                dataframe[column_name].append(value)
+        return dataframe
+
     ### === Update ===
     def update(self, update_obj):
         """更新数据
@@ -1166,3 +1176,65 @@ class Sqlite3Engine():
         """
         num_of_record = self.howmany(table)
         print("Found %s records in %s" % (num_of_record, table.table_name))
+
+if __name__ == "__main__":
+    import unittest
+    from angora.STRING import *
+    from angora.DATA import *
+    import random
+    class SqliteEngineUnittest(unittest.TestCase):
+        def setUp(self):
+            self.engine = Sqlite3Engine(":memory:")
+            metadata = MetaData()
+            dtype = DataType()
+            self.test = Table("test", metadata,
+                    Column("integer_type", dtype.integer, primary_key=True),
+                    Column("real_type", dtype.real),
+                    Column("text_type", dtype.text),
+                    Column("date_type", dtype.date),
+                    Column("datetime_type", dtype.datetime),
+                    Column("pickle_type", dtype.pickletype),
+                    Column("strlist_type", dtype.strlist),
+                    Column("intlist_type", dtype.intlist),
+                    Column("strset_type", dtype.strset),
+                    Column("intset_type", dtype.intset),
+                    )
+            metadata.create_all(self.engine)
+            
+            ins = self.test.insert()
+
+            tpl = Template()
+            tw = TimeWrapper()
+            rows = list()
+            for i in range(10):
+                row = dict()
+                row["integer_type"] = i
+                row["real_type"] = random.random()
+                row["text_type"] = tpl.randstr(32)
+                row["date_type"] = tw.randdate("2014-01-01", "2014-12-31")
+                row["datetime_type"] = tw.randdatetime("2014-01-01 00:00:00", "2014-12-31 23:59:59")
+                row["pickle_type"] = {1: "a", 2: "b", 3: "c"}
+                row["strlist_type"] = StrList(["a", "b", "c"])
+                row["intlist_type"] = IntList([1, 2, 3])
+                row["strset_type"] =  StrSet({"a", "b", "c"})
+                row["intset_type"] =  IntSet({1, 2, 3})
+                rows.append(Row.from_dict(row))
+
+            self.engine.insert_many_rows(ins, rows)
+        
+        def test_select(self):
+            """测试select_row能否返回Row对象, 即可以用Row.key或Row[key]的方法获得值
+            """
+            results = list(self.engine.select_row(Select(self.test.all)) )
+            self.assertEqual(results[0].integer_type, 0)
+            self.assertDictEqual(results[1].pickle_type, {1: "a", 2: "b", 3: "c"})
+            self.assertListEqual(results[2]["strlist_type"], StrList(["a", "b", "c"]))
+            self.assertSetEqual(results[3]["intset_type"], IntSet({1, 2, 3}))
+            
+        def test_select_column(self):
+            """测试select_column是否能返回一个类似pandas.DataFrame的以列为导向的视图
+            """
+            df = self.engine.select_column(Select([self.test.integer_type]))
+            self.assertListEqual(df["integer_type"], list(range(10)))
+
+    unittest.main()

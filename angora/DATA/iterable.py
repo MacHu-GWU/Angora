@@ -7,7 +7,7 @@ best time and memory complexity implementation applied.
 compatible: python2 and python3
 
 import:
-    from .iterable import (flatten, flatten_all, nth, shuffled, grouper, grouper_dict, grouper_list,
+    from .iterable import (take, flatten, flatten_all, nth, shuffled, grouper, grouper_dict, grouper_list,
         running_windows, cycle_running_windows, cycle_slice, count_generator)
 """
 
@@ -22,13 +22,17 @@ if is_py2:
     from itertools import ifilterfalse as filterfalse, izip_longest as zip_longest
 else: # in python3
     from itertools import filterfalse, zip_longest
-    
+
+def take(n, iterable):
+    "Return first n items of the iterable as a list"
+    return list(itertools.islice(iterable, n))
+
 def flatten(listOfLists):
     "Flatten one level of nesting"
     return itertools.chain.from_iterable(listOfLists)
 
 def flatten_all(listOfLists):
-    "Flatten arbitrary depth of nesting"
+    "Flatten arbitrary depth of nesting, better for unknown nesting structure iterable object"
     for i in listOfLists:
         if hasattr(i, "__iter__"):
             for j in flatten_all(i):
@@ -154,24 +158,94 @@ def count_generator(generator, memory_efficient=True):
 if __name__ == "__main__":
     from angora.GADGET.pytimer import Timer
     import time
-    
+    import unittest
     timer = Timer()
+
+    class IterToolsUnittest(unittest.TestCase):
+        def setUp(self):
+            self.iterable_generator = range(10)
+            self.iterable_list = list(range(10))
+            self.iterable_set = set(list(range(10)))
+            self.iterable_dict = {i: chr(j) for i, j in zip(range(1, 11), range(65, 75))}
+
+        def test_take(self):
+            self.assertEqual(take(5, self.iterable_generator), [0, 1, 2, 3, 4])
+            self.assertEqual(take(5, self.iterable_list), [0, 1, 2, 3, 4])
+            self.assertEqual(take(5, self.iterable_set), [0, 1, 2, 3, 4])
+            self.assertEqual(take(5, self.iterable_dict), [1, 2, 3, 4, 5])
+
+        def test_flatten(self):
+            """测试flatten的性能, 应该要比二重循环性能好
+            """
+            complexity = 1000
+            iterable = [list(range(complexity))] * complexity
+            
+            timer.start()
+            for _ in flatten(iterable):
+                pass
+            print("fatten method takes %.6f second" % timer.stop())
+
+            timer.start()
+            for chunk in iterable:
+                for _ in chunk:
+                    pass
+            print("double for loop method takes %.6f second" % timer.stop())
+            
+        def test_flatten_all(self):
+            """flatten_all slower, but more convenient. And you don't need to know how iterable
+            nested in each other. 
+            """
+            complexity = 100
+            iterable = [[list(range(complexity))] * complexity] * complexity
+            
+            timer.start()
+            for _ in flatten_all(iterable):
+                pass
+            print("fatten_all method takes %.6f second" % timer.stop())
+
+            timer.start()
+            for chunk1 in iterable:
+                for chunk2 in chunk1:
+                    for _ in chunk2:
+                        pass
+            print("nested for loop method takes %.6f second" % timer.stop())
+        
+        def test_nth(self):
+            self.assertEqual(nth(self.iterable_list, 5), 5)
+            
+        def test_count_generator(self):
+            self.assertEqual(count_generator(self.iterable_generator), 10)
+
+            def number_generator():
+                for i in range(1000000):
+                    yield i
+                    
+            timer.start()
+            count_generator(number_generator(), memory_efficient=True)
+            print("memory_efficient way takes %s second" % timer.stop())
+            
+            timer.start()
+            count_generator(number_generator(), memory_efficient=False)
+            print("non-memory_efficient way takes %s second" % timer.stop())
+            
+    unittest.main()
+
     def test_flatten():
         """测试flatten的性能
         """
         print("{:=^40}".format("test_flatten"))
         complexity = 1000
         a = [[1,2,3],[4,5,6],[7,8,9,10]] * complexity
-        b = range(10 * complexity)
-        
+
         st = time.clock()
         for _ in flatten(a):
             pass
         print(time.clock() - st)
         
         st = time.clock()
-        for _ in b:
-            pass
+        for chunk in a:
+            for _ in chunk:
+                pass
         print(time.clock() - st)
     
 #     test_flatten()

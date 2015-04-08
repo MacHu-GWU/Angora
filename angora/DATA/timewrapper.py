@@ -22,9 +22,9 @@ import:
 
 from __future__ import print_function
 from builtins import range
-from datetime import datetime as dt, timedelta as td
+from datetime import datetime as dt, date as date, timedelta as td
 import itertools
-
+import random
 ##############
 # Exceptions #
 ##############
@@ -313,7 +313,67 @@ class TimeWrapper(object):
                     yield converter(start)              
         else:
             raise Exception("Must specify two of start, end, or periods")
-        
+    
+    def randdate(self, start, end):
+        """generate a random date between start to end
+
+        [Args]
+        ------
+            start : string or date-like, Left bound for generating date
+            end : string or date-like, Right bound for generating dates
+
+        [Returns]
+        ---------
+            a datetime.date object
+        """
+        if isinstance(start, str):
+            start = self.str2date(start)
+        if isinstance(end, str):
+            end = self.str2date(end)
+        if start > end:
+            raise Exception("start must be smaller than end! your start=%s, end=%s" % (start, end))
+        return date.fromordinal(random.randint(start.toordinal(), end.toordinal()))
+
+    def randdate(self, start, end):
+        """generate a random date between start to end
+
+        [Args]
+        ------
+            start : string or date-like, Left bound for generating date
+            end : string or date-like, Right bound for generating dates
+
+        [Returns]
+        ---------
+            a datetime.date object
+        """
+        if isinstance(start, str):
+            start = self.str2date(start)
+        if isinstance(end, str):
+            end = self.str2date(end)
+        if start > end:
+            raise Exception("start must be smaller than end! your start=%s, end=%s" % (start, end))
+        return date.fromordinal(random.randint(start.toordinal(), end.toordinal()))
+
+    def randdatetime(self, start, end):
+        """generate a random datetime between start to end
+
+        [Args]
+        ------
+            start : string or datetime-like, Left bound for generating date
+            end : string or datetime-like, Right bound for generating dates
+
+        [Returns]
+        ---------
+            a datetime.datetime object
+        """
+        if isinstance(start, str):
+            start = self.str2datetime(start)
+        if isinstance(end, str):
+            end = self.str2datetime(end)
+        if start > end:
+            raise Exception("start must be smaller than end! your start=%s, end=%s" % (start, end))
+        return dt.fromtimestamp(random.randint(start.timestamp(), end.timestamp()))
+
 if __name__ == "__main__":
     import unittest
     class TimeWrapperUnittest(unittest.TestCase):
@@ -328,28 +388,28 @@ if __name__ == "__main__":
             
         def test_day_month_year_interval(self):
             # day_interval
-            self.assertEqual(self.tw.day_interval(2014, 3, 5), # with no mode argument
+            self.assertTupleEqual(self.tw.day_interval(2014, 3, 5), # with no mode argument
                 ("2014-03-05 00:00:00", "2014-03-05 23:59:59")
                 )
-            self.assertEqual(self.tw.day_interval(2014, 12, 31, mode="datetime"), # datetime mode
+            self.assertTupleEqual(self.tw.day_interval(2014, 12, 31, mode="datetime"), # datetime mode
                 (dt(2014,12,31,0,0,0), dt(2014,12,31,23,59,59))
                 )
             self.assertRaises(ModeError, self.tw.day_interval, 2014, 12, 31, mode="good") # wrong mode
         
             # month_interval
-            self.assertEqual(self.tw.month_interval(2014, 3),
+            self.assertTupleEqual(self.tw.month_interval(2014, 3),
                 ("2014-03-01 00:00:00", "2014-03-31 23:59:59")
                 )
-            self.assertEqual(self.tw.month_interval(2014, 12, mode="datetime"),
+            self.assertTupleEqual(self.tw.month_interval(2014, 12, mode="datetime"),
                 (dt(2014,12,1,0,0,0), dt(2014,12,31,23,59,59))
                 )
             self.assertRaises(ModeError, self.tw.month_interval, 2014, 12, mode="good")
             
             # year interval
-            self.assertEqual(self.tw.year_interval(2014),
+            self.assertTupleEqual(self.tw.year_interval(2014),
                 ("2014-01-01 00:00:00", "2014-12-31 23:59:59")
                 )
-            self.assertEqual(self.tw.year_interval(2014, mode="datetime"),
+            self.assertTupleEqual(self.tw.year_interval(2014, mode="datetime"),
                 (dt(2014,1,1,0,0,0), dt(2014,12,31,23,59,59))
                 )
             self.assertRaises(ModeError, self.tw.year_interval, 2014, mode="good")
@@ -367,29 +427,41 @@ if __name__ == "__main__":
         
         def test_dtime_range(self):
             # test start + end
-            self.assertEqual([dt(2014,1,1,3,0,0), dt(2014,1,1,3,5,0), dt(2014,1,1,3,10,0)],
+            self.assertListEqual([dt(2014,1,1,3,0,0), dt(2014,1,1,3,5,0), dt(2014,1,1,3,10,0)],
                 list(self.tw.dtime_range(start="2014-01-01 03:00:00", 
                                     end="2014-01-01 03:10:00", 
                                     freq="5min"))
                 )
             # test start + periods
-            self.assertEqual([dt(2014,1,1,3,0,0), dt(2014,1,1,3,5,0), dt(2014,1,1,3,10,0)],
+            self.assertListEqual([dt(2014,1,1,3,0,0), dt(2014,1,1,3,5,0), dt(2014,1,1,3,10,0)],
                 list(self.tw.dtime_range(start="2014-01-01 03:00:00", 
                                     periods=3, 
                                     freq="5min"))
                 )
             # test end + periods
-            self.assertEqual([dt(2014,1,1,3,0,0), dt(2014,1,1,3,5,0), dt(2014,1,1,3,10,0)],
+            self.assertListEqual([dt(2014,1,1,3,0,0), dt(2014,1,1,3,5,0), dt(2014,1,1,3,10,0)],
                 list(self.tw.dtime_range(end="2014-01-01 03:10:00",
                                     periods=3,
                                     freq="5min"))
                 )
             # test take datetime as input
-            self.assertEqual([dt(2014,1,1,3,0,0), dt(2014,1,1,3,5,0), dt(2014,1,1,3,10,0)],
+            self.assertListEqual([dt(2014,1,1,3,0,0), dt(2014,1,1,3,5,0), dt(2014,1,1,3,10,0)],
                 list(self.tw.dtime_range(start=dt(2014,1,1,3,0,0), 
                                     end=dt(2014,1,1,3,10,0), 
                                     freq="5min"))
                 )
-            
+        
+        def test_randdate_randdatetime(self):
+            # test random date is between the boundary
+            a_date = self.tw.randdate("2014-01-01", date(2014, 1, 31))
+            self.assertGreaterEqual(a_date, date(2014, 1, 1))
+            self.assertLessEqual(a_date, date(2014, 1, 31))
+
+            # test random datetime is between the boundary
+            a_datetime = self.tw.randdatetime("2014-01-01", dt(2014, 1, 31, 23, 59, 59))
+            self.assertGreaterEqual(a_datetime, dt(2014, 1, 1, 0, 0, 0))
+            self.assertLessEqual(a_datetime, dt(2014, 1, 31, 23, 59, 59))
+
+
     unittest.main()
     

@@ -332,7 +332,7 @@ def Engine_select_unittest():
     for record in engine.select(Select(movie.all).order_by("release_date").limit(3).offset(1)):
         print(record)    
         
-Engine_select_unittest()
+# Engine_select_unittest()
 
 def Update_unittest():    
     upd = movie.update().values( title = "ABCDEFG", 
