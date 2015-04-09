@@ -238,18 +238,18 @@ def Engine_insert_unittest():
         engine.insert_row(ins,row)
         engine.prt_all(movie)
         
-    test1()
+#     test1()
     
     def test2():
         """测试批量插入的方法
         """
-        engine.insert_many_records(ins, record_generator())
+#         engine.insert_many_records(ins, record_generator())
         engine.insert_many_rows(ins, row_generator())
         engine.prt_all(movie)
         
-#     test2()
+    test2()
     
-# Engine_insert_unittest()
+Engine_insert_unittest()
 
 ################
 #    Select    #
