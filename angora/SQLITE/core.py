@@ -379,7 +379,10 @@ class Select():
         new_record = list()
         for column, item in zip(self.columns, record):
             if column.is_pickletype:
-                new_record.append(bytestr2obj(item))
+                if item:
+                    new_record.append(bytestr2obj(item))
+                else:
+                    new_record.append(item)
             else:
                 new_record.append(item)
         return tuple(new_record)
@@ -1137,7 +1140,7 @@ class Sqlite3Engine():
         """返回一个封装好的列表
         """
         dataframe = {column_name: list() for column_name in select_obj.column_names}
-        for record in self.cursor.execute(select_obj.toSQL()):
+        for record in self.select(select_obj):
             for column_name, value in zip(select_obj.column_names, record):
                 dataframe[column_name].append(value)
         return dataframe
