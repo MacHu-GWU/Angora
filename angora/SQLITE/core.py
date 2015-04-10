@@ -80,7 +80,7 @@ class Row():
         [EN]Generate a Row object from a python dictionary
         [CN]从一个字典中生成Row对象
         """
-        return Row(list(dictionary.keys()), list(dictionary.values()))
+        return Row(tuple(dictionary.keys()), tuple(dictionary.values()))
     
     def _create_dict_view(self):
         """
@@ -90,37 +90,45 @@ class Row():
         行tuple, 从而节约了计算量。
         """
         self.dictionary_view = OrderedDict()
-        for i, j in zip(self.columns, self.values):
-            self.dictionary_view[i] = j
-
-    def __str__(self):
+        for column_name, value in zip(self.columns, self.values):
+            self.dictionary_view[column_name] = value
+    
+    def _smart_create_dict_view(self):
+        """在_create_dict_view之前进行判断是否需要重新创建dictionary_view
+        """
         if not self.dictionary_view:
             self._create_dict_view()
+            
+    def __str__(self):
+        self._smart_create_dict_view()
         return str(self.dictionary_view)
     
     def __repr__(self):
         return "Row(columns=%s, values=%s)" % (self.columns, self.values)
     
     def __getitem__(self, key):
-        if not self.dictionary_view:
-            self._create_dict_view()
+        self._smart_create_dict_view()
         return self.dictionary_view[key]
     
     def __setitem__(self, key, value):
-        if not self.dictionary_view:
-            self._create_dict_view()
+        self._smart_create_dict_view()
         if key in self.dictionary_view:
             self.dictionary_view[key] = value
-            self.columns = list(self.dictionary_view.keys())
-            self.values = list(self.dictionary_view.values())
+            self.columns = tuple(self.dictionary_view.keys())
+            self.values = tuple(self.dictionary_view.values())
         else:
             raise KeyError
         
     def __getattr__(self, attr):
-        if not self.dictionary_view:
-            self._create_dict_view()
+        self._smart_create_dict_view()
         return self.dictionary_view[attr]
-
+    
+    def __eq__(self, other):
+        self._smart_create_dict_view()
+        other._smart_create_dict_view()
+        return dict(self.dictionary_view) == dict(other.dictionary_view)
+    
+    
 ##################################################
 #                                                #
 #                 Insert class                   #
@@ -185,7 +193,10 @@ class Insert():
         new_record = list()
         for column, item in zip(self.table.columns.values(), record):
             if column.is_pickletype:
-                new_record.append(obj2bytestr(item))
+                if item: # 如果 item 不为 None, 则需要处理成bytestr
+                    new_record.append(obj2bytestr(item))
+                else: # 如果 item 为 None, 则不处理
+                    new_record.append(item)
             else:
                 new_record.append(item)
         return tuple(new_record)
@@ -201,7 +212,10 @@ class Insert():
         new_record = list()
         for column, item in zip(row.columns, row.values):
             if self.table.columns[column].is_pickletype:
-                new_record.append(obj2bytestr(item))
+                if item: # 如果 item 不为 None, 则需要处理成bytestr
+                    new_record.append(obj2bytestr(item))
+                else: # 如果 item 为 None, 则不处理
+                    new_record.append(item)
             else:
                 new_record.append(item)
         return tuple(new_record)
@@ -220,12 +234,17 @@ class _Update_config():
     所以对于Column对象, 我们定义了 __add__ 等运算符方法, 将 Column + 数值 定义为返回一个_Update_config
     对象。这样在 Update.values(**kwarg) 方法中我们就可以将 Column + 数值 作文sql字符串进行输入了
     
-    目前只支持 column 和 数值进行运算, 并且只能有两项
+    目前只支持 column 和 数值进行运算, 并且只能有两项。
     """
     def __init__(self, sqlcmd):
         self.sqlcmd = sqlcmd
 
 class Update():
+    """
+    [CN]Update对象可以通过Table.update()命令生成。当我们执行:
+        Sqlite3Engine.update(update_obj)时, 会执行Update.sqlcmd()方法以更新Update.update_sqlcmd,
+        然后执行cursor.execute(Update.update_sqlcmd)以完成更新
+    """
     def __init__(self, table):
         self.table = table
         self.update_clause = "UPDATE %s" % self.table.table_name
@@ -245,10 +264,10 @@ class Update():
                 res.append("%s = %s" % (column_name, "NULL"))
             else:
                 column = self.table.columns[column_name]
-                try: # 处理相对更新
+                try: # value是_Update_config对象, 处理相对更新
                     res.append("%s = %s" % (column.column_name, 
                                             value.sqlcmd ) ) # 直接使用
-                except: # 处理绝对更新
+                except: # value是一个值, 处理绝对更新
                     res.append("%s = %s" % (column.column_name, 
                                             column.__SQL__(value) ) ) # 将 = value 中 value 的部分处理
             
@@ -258,13 +277,22 @@ class Update():
     def where(self, *argv):
         """define WHERE clause in UPDATE SQL command
         """
-        self.where_clause = "WHERE\n\t%s" % " AND\n\t".join([i.sqlcmd for i in argv])
+        self.where_clause = "WHERE\n\t%s" % " AND\n\t".join([_select_config.sqlcmd for _select_config in argv])
         return self
     
     def sqlcmd(self):
         """generate "UPDATE table SET..." SQL command
         
         example output:
+        
+            update = movie.update().values(
+                movie.genres = {1,2,3}, 
+                movie.length = movie.length + 9999,
+                movie.release_date = '1500-01-01',
+                movie.title = 'ABCDEFG').where(
+                    movie.release_date <= '2000-01-01',
+                    movie.length > 100)
+            update.sqlcmd() # update.update_sqlcmd = the following
         
             UPDATE movie
             SET
@@ -300,11 +328,21 @@ def desc(column_name):
     return _Select_config("%s DESC" % column_name)
 
 class _Select_config():
+    """_Select_config is a internal (for developer only) class to set up WHERE clause
+    Usually it's generated by a comparison operator of a Column object and a value.
+    For example:
+        Column >= 100
+        Column.between(100, 200)
+        Column.like("pattern")
+    """
     def __init__(self, sqlcmd):
         self.sqlcmd = sqlcmd
 
 class Select():
     def __init__(self, columns):
+        """To create a Select object, you have to name a list of Column object has to select. And
+        use where(), limit(), offset(), distinct(), order_by() method to specify your selection.
+        """
         self.columns = columns
         self.column_names = tuple([column.column_name for column in self.columns])
         
@@ -379,9 +417,9 @@ class Select():
         new_record = list()
         for column, item in zip(self.columns, record):
             if column.is_pickletype:
-                if item:
+                if item: # 如果 item 不为 None, 则需要处理成bytestr
                     new_record.append(bytestr2obj(item))
-                else:
+                else: # 如果 item 为 None, 则不处理
                     new_record.append(item)
             else:
                 new_record.append(item)
@@ -800,11 +838,17 @@ class Column():
         return _Select_config("%s <= %s" % (self.column_name, self.__SQL__(other)) )
     
     def __eq__(self, other):
-        return _Select_config("%s = %s" % (self.column_name, self.__SQL__(other)) )
-    
+        if other:
+            return _Select_config("%s = %s" % (self.column_name, self.__SQL__(other)) )
+        else: # if Column == None, means column_name is Null
+            return _Select_config("%s IS NULL" % self.column_name)
+        
     def __ne__(self, other):
-        return _Select_config("%s != %s" % (self.column_name, self.__SQL__(other)) )
-    
+        if other:
+            return _Select_config("%s != %s" % (self.column_name, self.__SQL__(other)) )
+        else: # if Column != None, means column_name NOT Null
+            return _Select_config("%s NOT NULL" % self.column_name)
+        
     def __gt__(self, other):
         return _Select_config("%s > %s" % (self.column_name, self.__SQL__(other)) )
     
@@ -1059,6 +1103,7 @@ class Sqlite3Engine():
             self.cursor.execute(insert_obj.insert_sqlcmd, insert_obj.current_converter(row))
         except:
             pass
+        
         for row in rows:
             try:
                 self.cursor.execute(insert_obj.insert_sqlcmd, insert_obj.current_converter(row))
@@ -1184,51 +1229,52 @@ if __name__ == "__main__":
     import unittest
     from angora.STRING import *
     from angora.DATA import *
+    from datetime import datetime, date, timedelta
     import random
+    
+    tpl = Template()
+    tw = TimeWrapper()
+    
+    engine = Sqlite3Engine(":memory:")
+    metadata = MetaData()
+    dtype = DataType()
+    test = Table("test", metadata,
+        Column("integer_type", dtype.integer, primary_key=True),
+        Column("real_type", dtype.real),
+        Column("text_type", dtype.text),
+        Column("date_type", dtype.date),
+        Column("datetime_type", dtype.datetime),
+        Column("pickle_type", dtype.pickletype),
+        Column("strlist_type", dtype.strlist),
+        Column("intlist_type", dtype.intlist),
+        Column("strset_type", dtype.strset),
+        Column("intset_type", dtype.intset),
+        )
+    metadata.create_all(engine)
+    
+    ins = test.insert()
+    rows = list()
+    for i in range(10):
+        row = dict()
+        row["integer_type"] = i
+        row["real_type"] = random.random()
+        row["text_type"] = tpl.randstr(32)
+        row["date_type"] = tw.randdate("2014-01-01", "2014-12-31")
+        row["datetime_type"] = tw.randdatetime("2014-01-01 00:00:00", "2014-12-31 23:59:59")
+        row["pickle_type"] = {1: "a", 2: "b", 3: "c"}
+        row["strlist_type"] = StrList(["a", "b", "c"])
+        row["intlist_type"] = IntList([1, 2, 3])
+        row["strset_type"] =  StrSet({"a", "b", "c"})
+        row["intset_type"] =  IntSet({1, 2, 3})
+        rows.append(Row.from_dict(row))
+
+    engine.insert_many_rows(ins, rows)
+
     class SqliteEngineUnittest(unittest.TestCase):
-        def setUp(self):
-            self.engine = Sqlite3Engine(":memory:")
-            metadata = MetaData()
-            dtype = DataType()
-            self.test = Table("test", metadata,
-                    Column("integer_type", dtype.integer, primary_key=True),
-                    Column("real_type", dtype.real),
-                    Column("text_type", dtype.text),
-                    Column("date_type", dtype.date),
-                    Column("datetime_type", dtype.datetime),
-                    Column("pickle_type", dtype.pickletype),
-                    Column("strlist_type", dtype.strlist),
-                    Column("intlist_type", dtype.intlist),
-                    Column("strset_type", dtype.strset),
-                    Column("intset_type", dtype.intset),
-                    )
-            metadata.create_all(self.engine)
-            
-            ins = self.test.insert()
-
-            tpl = Template()
-            tw = TimeWrapper()
-            rows = list()
-            for i in range(10):
-                row = dict()
-                row["integer_type"] = i
-                row["real_type"] = random.random()
-                row["text_type"] = tpl.randstr(32)
-                row["date_type"] = tw.randdate("2014-01-01", "2014-12-31")
-                row["datetime_type"] = tw.randdatetime("2014-01-01 00:00:00", "2014-12-31 23:59:59")
-                row["pickle_type"] = {1: "a", 2: "b", 3: "c"}
-                row["strlist_type"] = StrList(["a", "b", "c"])
-                row["intlist_type"] = IntList([1, 2, 3])
-                row["strset_type"] =  StrSet({"a", "b", "c"})
-                row["intset_type"] =  IntSet({1, 2, 3})
-                rows.append(Row.from_dict(row))
-
-            self.engine.insert_many_rows(ins, rows)
-        
         def test_select(self):
             """测试select_row能否返回Row对象, 即可以用Row.key或Row[key]的方法获得值
             """
-            results = list(self.engine.select_row(Select(self.test.all)) )
+            results = list(engine.select_row(Select(test.all)) )
             self.assertEqual(results[0].integer_type, 0)
             self.assertDictEqual(results[1].pickle_type, {1: "a", 2: "b", 3: "c"})
             self.assertListEqual(results[2]["strlist_type"], StrList(["a", "b", "c"]))
@@ -1237,7 +1283,69 @@ if __name__ == "__main__":
         def test_select_column(self):
             """测试select_column是否能返回一个类似pandas.DataFrame的以列为导向的视图
             """
-            df = self.engine.select_column(Select([self.test.integer_type]))
+            df = engine.select_column(Select([test.integer_type]))
             self.assertListEqual(df["integer_type"], list(range(10)))
 
+    class InsertUnittest(unittest.TestCase):
+        def test_sqlcmd(self):
+            ins = test.insert()
+            record = (11, 1.0, "abc", date(2015, 1, 1), datetime(2015, 1, 1, 0, 0, 0),
+                      [1, 2, 3], StrList(["c", "b", "a"]), IntList([3, 2, 1]),
+                      StrSet(["c", "b", "a"]), IntSet([3, 2, 1]))
+            row = Row(tuple(test.columns.keys()),
+                      record)
+            
+            correct_sqlcmd = "INSERT INTO test\n\t(integer_type, real_type, text_type, date_type, datetime_type, pickle_type, strlist_type, intlist_type, strset_type, intset_type)\nVALUES\n\t(?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+            
+            # test sqlcmd_from_record() method
+            ins.sqlcmd_from_record()
+            self.assertEqual(ins.insert_sqlcmd, correct_sqlcmd)
+            
+            # test sqlcmd_from_row() method
+            ins.sqlcmd_from_row(row)
+            self.assertEqual(ins.insert_sqlcmd, correct_sqlcmd)
+            
+            # test picklize_record() method
+            self.assertTupleEqual(ins.picklize_record(record),
+                (11, 1.0, 'abc', date(2015, 1, 1), datetime(2015, 1, 1, 0, 0), 
+                 b"\x80\x03]q\x00(K\x01K\x02K\x03e.", 
+                 ['c', 'b', 'a'], [3, 2, 1], StrSet({'a', 'c', 'b'}), IntSet({1, 2, 3}))
+                )
+            
+            # test picklize_row() method
+            self.assertTupleEqual(ins.picklize_row(row),
+                (11, 1.0, 'abc', date(2015, 1, 1), datetime(2015, 1, 1, 0, 0), 
+                 b"\x80\x03]q\x00(K\x01K\x02K\x03e.", 
+                 ['c', 'b', 'a'], [3, 2, 1], StrSet({'a', 'c', 'b'}), IntSet({1, 2, 3}))
+                )
+            
+    class RowUnittest(unittest.TestCase):
+        def test_initiate(self):
+            """测试Row的两种初始化方式, 字典视图, 对值的两种访问方式的测试
+            """
+            row1 = Row( ("text_type", "integer_type"), ( "abc", 1,))
+            row2 = Row.from_dict({"integer_type": 1, "text_type": "abc"})
+            
+            # test __str__() method
+            self.assertEqual(str(row1), "OrderedDict([('text_type', 'abc'), ('integer_type', 1)])")
+            
+            # test __repr__() method
+            self.assertEqual(repr(row1), "Row(columns=('text_type', 'integer_type'), values=('abc', 1))")
+            
+            # test __getattr__() method
+            self.assertEqual(row1.text_type, "abc")
+            
+            # test __getitem__() method
+            self.assertEqual(row1["integer_type"], 1)
+            
+            # test __eq__() method
+            self.assertEqual(row1, row2)
+            
+            # test __setitem__() method
+            row2["integer_type"] = 2
+            self.assertEqual(row2["integer_type"], 2)
+            
+            # from_dict(), _create_dict_view(), _smart_create_dict_view() are implicitly tested
+    
+    
     unittest.main()
