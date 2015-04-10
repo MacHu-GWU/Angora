@@ -316,15 +316,23 @@ class Update():
 ##################################################
 
 def _and(*argv):
+    """AND join list of where clause criterions
+    """
     return _Select_config("(%s)" % " AND ".join([i.sqlcmd for i in argv]))
 
 def _or(*argv):
+    """OR join list of where clause criterions
+    """
     return _Select_config("(%s)" % " OR ".join([i.sqlcmd for i in argv]))
 
 def asc(column_name):
+    """sort results by column_name in ascending order
+    """
     return _Select_config("%s ASC" % column_name)
 
 def desc(column_name):
+    """sort results by column_name in descending order
+    """
     return _Select_config("%s DESC" % column_name)
 
 class _Select_config():
@@ -339,6 +347,10 @@ class _Select_config():
         self.sqlcmd = sqlcmd
 
 class Select():
+    """
+    [CN]Select对象用于创建SQL select语句。 在我们执行Sqlite3Engine.select(Select(table.all))时,
+    首先会调用Select.toSQL()方法创建SQL语句, 然后执行cursor。
+    """
     def __init__(self, columns):
         """To create a Select object, you have to name a list of Column object has to select. And
         use where(), limit(), offset(), distinct(), order_by() method to specify your selection.
@@ -361,7 +373,12 @@ class Select():
             self.default_record_converter = self.picklize_record
 
     def where(self, *argv):
-        """take arbitrary many _Select_config object in where clause
+        """where() method is used to filter records. It takes arbitrary many comparison of 
+        column and a value as Input, and construct a _Select_config() object to store these
+        information. And finally produce the where_clause SQL.
+        
+        example:
+            where(column1 >= 3.14, column2.between(1, 100), column3.like("%pattern%"))
         """
         self.where_clause = "WHERE %s" % " AND ".join([i.sqlcmd for i in argv])
         return self
@@ -383,7 +400,18 @@ class Select():
         return self
     
     def order_by(self, *argv):
-        """take arbitrary many _Select_config object in where clause
+        """sort the result-set by one or more columns. you can name the order of the columns and
+        ascending or descending.
+        
+        valid argument:
+            "column_name", defualt ascending
+            asc("column_name"),
+            desc("column_name"),
+        
+        example:
+            order_by("column_name1", desc("column_name2"))
+        
+        function can automatically produce _Select_conifg() object by your setting
         """
         new_argv = list()
         for i in argv:
@@ -706,6 +734,9 @@ def convert_ordereddict(_STRING):
 ##################################################
 
 class Column():
+    """
+
+    """
     def __init__(self, column_name, data_type, primary_key=False, nullable=True, default=None):
         if column_name in ["table_name", "columns", "primary_key_columns", "pickletype_columns", "all"]:
             raise Exception("""column name cannot use those system reserved name:
@@ -757,6 +788,10 @@ class Column():
                                                                               self.primary_key,
                                                                               self.nullable,
                                                                               repr(self.default),)
+
+    # 下面这些_sql开头的方法是用于让不同的数据类型在SQL语句中正确的显示, 比如字符串的两边在SQL中
+    # 要加'', 比如byte在Sql中是以 X'0482e0891ab87' 的形式表达的。
+    # 所有的这些方法都跟Column所支持的数据类型在 __SQL__method_mapping 字典中做了一一对应
 
     def _sql_STRING_NUMBER(self, value):
         """if it is string or number, in sql command it's just 'string', number
@@ -832,28 +867,28 @@ class Column():
     """
     
     def __lt__(self, other):
-        return _Select_config("%s < %s" % (self.column_name, self.__SQL__(other)) )
+        return _Select_config("%s < %s" % (self.column_name, self.__SQL__(other) ) )
 
     def __le__(self, other):
-        return _Select_config("%s <= %s" % (self.column_name, self.__SQL__(other)) )
+        return _Select_config("%s <= %s" % (self.column_name, self.__SQL__(other) ) )
     
     def __eq__(self, other):
-        if other:
-            return _Select_config("%s = %s" % (self.column_name, self.__SQL__(other)) )
-        else: # if Column == None, means column_name is Null
+        if other == None: # if Column == None, means column_name is Null
             return _Select_config("%s IS NULL" % self.column_name)
+        else:
+            return _Select_config("%s = %s" % (self.column_name, self.__SQL__(other) ) )
         
     def __ne__(self, other):
-        if other:
-            return _Select_config("%s != %s" % (self.column_name, self.__SQL__(other)) )
-        else: # if Column != None, means column_name NOT Null
+        if other == None: # if Column != None, means column_name NOT Null
             return _Select_config("%s NOT NULL" % self.column_name)
+        else:
+            return _Select_config("%s != %s" % (self.column_name, self.__SQL__(other) ) )
         
     def __gt__(self, other):
-        return _Select_config("%s > %s" % (self.column_name, self.__SQL__(other)) )
+        return _Select_config("%s > %s" % (self.column_name, self.__SQL__(other) ) )
     
     def __ge__(self, other):
-        return _Select_config("%s >= %s" % (self.column_name, self.__SQL__(other)) )
+        return _Select_config("%s >= %s" % (self.column_name, self.__SQL__(other) ) )
     
     def between(self, lowerbound, upperbound):
         """WHERE...BETWEEN...AND... clause
@@ -867,6 +902,12 @@ class Column():
         """
         return _Select_config("%s LIKE %s" % (self.column_name, self.__SQL__(wildcards)))
 
+    def in_(self, candidates):
+        """WHERE...IN... clause
+        """
+        return _Select_config("%s IN (%s)" % (self.column_name,
+            ", ".join([self.__SQL__(candidate) for candidate in candidates])
+            ))
     ## for Update().values() method. example: Update.values(column_name = column_name + 100)
     """
     由于在Update API中的values()方法使用计算符对column进行设定, 所以我们定义了
@@ -895,7 +936,7 @@ class Column():
         else:
             return _Update_config("%s * %s" % (self.column_name, self.__SQL__(other)) )
     
-    def __div__(self, other):
+    def __truediv__(self, other):
         if isinstance(other, Column):
             return _Update_config("%s / %s" % (self.column_name, other.column_name) )
         else:
@@ -914,7 +955,21 @@ class Column():
 #                                                #
 ##################################################
 
-class Table(): 
+class Table():
+    """Represent a table in a database.
+
+    e.g.::
+        mytable = Table("mytable", metadata,
+                    Column("mytable_id", INTEGER(), primary_key=True),
+                    Column("value", TEXT()),
+                    )
+
+    columns can be accessed by table.column_name
+
+    e.g.::
+        mytable_id = mytable.mytable_id
+
+    """
     def __init__(self, table_name, metadata, *args):
         self.table_name = table_name
         self.columns = OrderedDict()
@@ -1270,6 +1325,73 @@ if __name__ == "__main__":
 
     engine.insert_many_rows(ins, rows)
 
+    ### ========== Put temp code here ============
+
+    class ColumnUnittest(unittest.TestCase):
+        def test_sql(self):
+            self.assertEqual(test.integer_type._sql_STRING_NUMBER(100), "100")
+            self.assertEqual(test.integer_type._sql_STRING_NUMBER("test"), "'test'")
+            self.assertEqual(test.integer_type._sql_DATE(date(2015, 1, 1)), "'2015-01-01'")
+            self.assertEqual(test.integer_type._sql_DATETIME(datetime(2015, 1, 1, 0, 6, 30)), "'2015-01-01 00:06:30'")
+            self.assertEqual(test.integer_type._sql_PICKLETYPE({1: "a", 2: "b"}), "X'80037d7100284b0158010000006171014b025801000000627102752e'")
+            self.assertIn(test.integer_type._sql_STRSET({"01", "02"}), ["'01&&02'", "'02&&01'"])
+            self.assertIn(test.integer_type._sql_INTSET({1, 2}), ["'1&&2'", "'2&&1'"])
+            self.assertEqual(test.integer_type._sql_STRLIST(["01", "02", "03"]), "'01&&02&&03'")
+            self.assertEqual(test.integer_type._sql_INTLIST([1, 2, 3]), "'1&&2&&3'")
+        
+        def test_create_table_sql(self):
+            col = Column("integer_type", INTEGER())
+            self.assertEqual(col.create_table_sql(), "integer_type INTEGER")
+            col = Column("datetime_type", DATETIME())
+            self.assertEqual(col.create_table_sql(), "datetime_type TIMESTAMP")
+            col = Column("pickle_type", PICKLETYPE())
+            self.assertEqual(col.create_table_sql(), "pickle_type BLOB")
+                
+        def test_comparison_operation(self):
+            # 测试 >, <, >=, <=, ==, !=, between, like 八大比较运算符运算返回的是否是_Select_config
+            self.assertTrue(isinstance(test.integer_type >= 0, _Select_config))
+            self.assertTrue(isinstance(test.text_type <= "abc", _Select_config))
+            self.assertTrue(isinstance(test.date_type > date.today(), _Select_config))
+            self.assertTrue(isinstance(test.datetime_type < datetime.now(), _Select_config))
+            self.assertTrue(isinstance(test.strlist_type == ["a", "b", "c"], _Select_config))
+            self.assertTrue(isinstance(test.intlist_type != [1, 2, 3], _Select_config))
+            self.assertTrue(isinstance(test.real_type.between(0, 1), _Select_config))
+            self.assertTrue(isinstance(test.text_type.like("%pattern%"), _Select_config))
+            self.assertTrue(isinstance(test.intset_type.in_(({1,2,3}, {4,5,6}, {7,8,9})), _Select_config))
+            
+            # 测试 >, <, >=, <=, ==, !=, between, like 八大比较运算符返回的sqlcmd
+            self.assertEqual((test.integer_type >= 0).sqlcmd, "integer_type >= 0")
+            self.assertEqual((test.text_type <= "abc").sqlcmd, "text_type <= 'abc'")
+            self.assertEqual((test.date_type > date(2015, 1, 1)).sqlcmd, "date_type > '2015-01-01'")
+            self.assertEqual((test.datetime_type < datetime(2015, 1, 1, 0, 6, 30)).sqlcmd, "datetime_type < '2015-01-01 00:06:30'")
+            self.assertEqual((test.strlist_type == ["a", "b", "c"]).sqlcmd, "strlist_type = 'a&&b&&c'")
+            self.assertEqual((test.intlist_type != [1, 2, 3]).sqlcmd, "intlist_type != '1&&2&&3'")
+            self.assertEqual((test.real_type.between(0, 1)).sqlcmd, "real_type BETWEEN 0 AND 1")
+            self.assertEqual((test.text_type.like("%pattern%")).sqlcmd, "text_type LIKE '%pattern%'")
+            self.assertEqual((test.intset_type.in_(({1,2,3}, {4,5,6}, {7,8,9}))).sqlcmd, "intset_type IN ('1&&2&&3', '4&&5&&6', '8&&9&&7')")
+            
+            # 测试 !=, == 和None做比较的时候, 是否能转化为SQL中的
+            self.assertEqual((test.text_type == None).sqlcmd, "text_type IS NULL")
+            self.assertEqual((test.text_type != None).sqlcmd, "text_type NOT NULL")
+        
+        def test_calculation_operation(self):
+            # 测试 +, -, *, /, pos, neg,
+            self.assertTrue(isinstance(test.integer_type + 1, _Update_config))
+            self.assertTrue(isinstance(test.integer_type - 1, _Update_config))
+            self.assertTrue(isinstance(test.integer_type * 2.0, _Update_config))
+            self.assertTrue(isinstance(test.integer_type / 2.0, _Update_config))
+            self.assertTrue(isinstance(- test.integer_type, _Update_config))
+            self.assertTrue(isinstance(+ test.integer_type, _Update_config))
+            
+            
+            self.assertEqual((test.integer_type + 1).sqlcmd, "integer_type + 1")
+            self.assertEqual((test.integer_type - 1).sqlcmd, "integer_type - 1")
+            self.assertEqual((test.integer_type * 2.0).sqlcmd, "integer_type * 2.0")
+            self.assertEqual((test.integer_type / 2.0).sqlcmd, "integer_type / 2.0")
+            self.assertEqual((-test.integer_type).sqlcmd, "+ integer_type")
+            self.assertEqual((+test.integer_type).sqlcmd, "- integer_type")
+            
+            
     class SqliteEngineUnittest(unittest.TestCase):
         def test_select(self):
             """测试select_row能否返回Row对象, 即可以用Row.key或Row[key]的方法获得值
@@ -1288,6 +1410,9 @@ if __name__ == "__main__":
 
     class InsertUnittest(unittest.TestCase):
         def test_sqlcmd(self):
+            """测试Insert是否能够根据不同的record, Row自动判断其中的类型, 然后生成用于插入到
+            数据库中的SQL语句, 以及把pickletype的列的值转化成bytestr
+            """
             ins = test.insert()
             record = (11, 1.0, "abc", date(2015, 1, 1), datetime(2015, 1, 1, 0, 0, 0),
                       [1, 2, 3], StrList(["c", "b", "a"]), IntList([3, 2, 1]),
@@ -1318,7 +1443,11 @@ if __name__ == "__main__":
                  b"\x80\x03]q\x00(K\x01K\x02K\x03e.", 
                  ['c', 'b', 'a'], [3, 2, 1], StrSet({'a', 'c', 'b'}), IntSet({1, 2, 3}))
                 )
-            
+    
+    class UpdateUnittest(unittest.TestCase):
+        def test_sqlcmd(self):
+            pass
+        
     class RowUnittest(unittest.TestCase):
         def test_initiate(self):
             """测试Row的两种初始化方式, 字典视图, 对值的两种访问方式的测试
@@ -1346,6 +1475,5 @@ if __name__ == "__main__":
             self.assertEqual(row2["integer_type"], 2)
             
             # from_dict(), _create_dict_view(), _smart_create_dict_view() are implicitly tested
-    
     
     unittest.main()

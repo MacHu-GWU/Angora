@@ -6,7 +6,7 @@ compatibility: compatible to python2 and python3
 prerequisites: None
 
 import:
-    from angora.GADGET.logicflow import tryit, timetest
+    from angora.GADGET.logicflow import tryit
 """
 
 from __future__ import print_function

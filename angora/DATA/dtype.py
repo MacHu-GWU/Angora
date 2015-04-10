@@ -8,7 +8,7 @@ OrderedSet 有序集合
 SuperSet 能同时intersect, union多个集合
 
 import:
-    from HSH.Data.dtype import OrderedSet, StrSet, IntSet, StrList, IntList
+    from angora.Data.dtype import OrderedSet, StrSet, IntSet, StrList, IntList
 """
 
 from __future__ import print_function

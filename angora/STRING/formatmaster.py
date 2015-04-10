@@ -1,6 +1,12 @@
 ##encoding=UTF8
 
 """
+author: Sanhe Hu
+
+compatibility: python2, python3 
+
+prerequisites: None
+
 import:
     from angora.STRING.formatmaster import FormatMaster
 """

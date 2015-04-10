@@ -177,7 +177,6 @@ class Section():
         
         
 class Configuration():
-
     def __init__(self):
         self._sections = OrderedDict()
         self._sections["DEFAULT"] = Section("DEFAULT")

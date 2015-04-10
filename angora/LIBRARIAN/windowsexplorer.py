@@ -11,7 +11,7 @@ compatibility: compatible to python2 and python3, BUT recommend python3 only
 prerequisites: None
 
 import
-    from andora.LIBRARIAN.windowsexplorer import WinFile, WinDir, FileCollections, WinExplorer, string_SizeInBytes
+    from angora.LIBRARIAN.windowsexplorer import WinFile, WinDir, FileCollections, WinExplorer, string_SizeInBytes
 """
 
 from __future__ import print_function

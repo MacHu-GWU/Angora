@@ -75,6 +75,7 @@ class TimeWrapper(object):
         self.datetime_templates.append("%Y-%m-%dT%H:%M:%S") # "2014-01-15T17:58:31"
         self.datetime_templates.append("%Y-%m-%d") # "2014-01-15"
         self.datetime_templates.append("%y%m%d%H") # "2014011517"
+        self.datetime_templates.append("%m/%d/%Y %H:%M") # "2014-01-15 14:05"
         self.datetime_templates.append("%Y-%m-%d %I:%M:%S %p") # 2014-01-15 5:58:31 PM
         self.datetime_templates.append("%m/%d/%Y %I:%M:%S %p") # 1/15/2014 5:58:31 PM
         

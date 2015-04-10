@@ -88,17 +88,18 @@ def import_help():
     print("\n".join(SQLITE_modules))
     
     GADGET_modules = [
+    "from angora.GADGET.configuration import Configuration",
+    "from angora.GADGET.fileIO import str2file, file2str",
     "from angora.GADGET.logger import Messenger, Log",
     "from angora.GADGET.logicflow import tryit",
     "from angora.GADGET.pytimer import Timer",
-    "from angora.GADGET.config import Configuration",
     ]
     print("\n{:=^100}".format("angora.GADGET"))
     print("\n".join(GADGET_modules))
     
     LIBRARIAN_modules = [
-    "from .angora.LIBRARIAN.windowsexplorer import WinFile, WinDir, FileCollections, WinExplorer, string_SizeInBytes",
-    "from .angora.LIBRARIAN.winzip import zip_a_folder, zip_everything_in_a_folder",
+    "from angora.LIBRARIAN.windowsexplorer import WinFile, WinDir, FileCollections, WinExplorer, string_SizeInBytes",
+    "from angora.LIBRARIAN.winzip import zip_a_folder, zip_everything_in_a_folder",
     ]
     print("\n{:=^100}".format("angora.LIBRARIAN"))
     print("\n".join(LIBRARIAN_modules))
@@ -118,6 +119,7 @@ def import_help():
     
     STRING_modules = [
     "from angora.STRING.formatmaster import FormatMaster, Template, Converter",
+    "from angora.STRING.reRecipe import ReParser",
     "from angora.STRING.stringmatch import StrMatcher",
     ]
     print("\n{:=^100}".format("angora.STRING"))
