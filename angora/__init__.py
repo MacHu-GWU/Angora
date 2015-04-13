@@ -10,6 +10,39 @@
 #                                #
 ##################################
 
+"""
+Copy this module doc string as a template to every module
+
+Copyright (c) 2015 by Sanhe Hu
+------------------------------
+    Author: Sanhe Hu
+    Email: husanhe@gmail.com
+    Lisence: LGPL
+    
+
+Module description
+------------------
+
+Keyword
+-------
+    
+    
+Compatibility
+-------------
+    Python2: Yes
+    Python3: Yes
+    
+Prerequisites
+-------------
+    None
+
+
+Import Command
+--------------
+    
+    
+"""
+
 from __future__ import print_function
 
 # from .BOT import *

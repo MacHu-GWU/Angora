@@ -1,13 +1,31 @@
 ##encoding=UTF8
 
 """
-author: Sanhe Hu
+Copyright (c) 2015 by Sanhe Hu
+------------------------------
+    Author: Sanhe Hu
+    Email: husanhe@gmail.com
+    Lisence: LGPL
+    
 
-compatibility: python2, python3 
+Module description
+------------------
+        
+Keyword
+-------
+    string
+    
+Compatibility
+-------------
+    Python2: Yes
+    Python3: Yes
+    
+Prerequisites
+-------------
+    None
 
-prerequisites: None
-
-import:
+Import Command
+--------------
     from angora.STRING.formatmaster import FormatMaster
 """
 
@@ -39,6 +57,7 @@ class Template():
 
     def _pad_indent(self, text, num_of_indent = 1):
         print(self.pad_indent(text = text, num_of_indent = num_of_indent))
+    
     
     def randstr(self, length):
         """generate random x-length alpha number string
@@ -145,7 +164,7 @@ if __name__ == "__main__":
         
         print(fm.template.randstr(32))
         
-#     FormatMaster_Template_unittest()
+    FormatMaster_Template_unittest()
     
     def FormatMaster_Converter_unittest():
         testdata = [
@@ -175,5 +194,5 @@ if __name__ == "__main__":
         print("%s => %s" % (testdata, 
                             fm.convert_list(fm.converter.person_name_formatter, testdata) ) )
         
-#     FormatMaster_Converter_unittest()
+    FormatMaster_Converter_unittest()
     

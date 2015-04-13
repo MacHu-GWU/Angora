@@ -1,15 +1,47 @@
 ##encoding=UTF8
 
 """
-一些winzip压缩的实用工具
+Copyright (c) 2015 by Sanhe Hu
+------------------------------
+    Author: Sanhe Hu
+    Email: husanhe@gmail.com
+    Lisence: LGPL
+    
 
-compatibility: compatible to python2 and python3
+Module description
+------------------
+    some useful API similar to WinZip/WinRar behavior like:
+        compress everything in a directory, use directory as top dir 
+        compress everything in a directory, not use directory
+        add a list of files to a zip file
 
-prerequisites: None
 
-import:
+Keyword
+-------
+    data compression, zip
+
+
+Compatibility
+-------------
+    Python2: Yes for non-ascii char in file system, but recommend using in python3 only
+    Python3: Yes
+
+
+Prerequisites
+-------------
+    None
+
+
+Import Command
+--------------
     from andora.LIBRARIAN.winzip import zip_a_folder, zip_everything_in_a_folder, zip_many_files
+"""
 
+from __future__ import print_function
+from zipfile import ZipFile
+import os
+
+"""
 注: python中zipfile包自带的ZipFile方法的用法如下
     基本用法:
         with ZipFile("filename.zip", "w") as f:
@@ -24,10 +56,6 @@ import:
             readme.txt
 """
 
-from __future__ import print_function
-from zipfile import ZipFile
-import os
- 
 def zip_a_folder(src, dst):
     """压缩整个文件夹
     """

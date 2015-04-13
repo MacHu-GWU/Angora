@@ -1,13 +1,34 @@
-##encoding=UTF8
+##encoding=utf-8
 
 """
-author: Sanhe Hu
+Copyright (c) 2015 by Sanhe Hu
+------------------------------
+    Author: Sanhe Hu
+    Email: husanhe@gmail.com
+    Lisence: LGPL
+    
 
-compatibility: python2, python3 
+Module description
+------------------
+    This module is to make regular expression easier to use.
+    With some built-in compiled pattern, we can use human language to generate
+    re pattern.
+        
+Keyword
+-------
+    re, string
+    
+Compatibility
+-------------
+    Python2: Yes
+    Python3: Yes
+    
+Prerequisites
+-------------
+    None
 
-prerequisites: None
-
-import:
+Import Command
+--------------
     from angora.STRING.reRecipe import ReParser
 """
 
@@ -15,7 +36,7 @@ from __future__ import print_function, unicode_literals
 import re
 
 class ReParser():
-    """A advance regular expression parser which has many useful built-in patterns.
+    """A advance regular expression extractor that have many useful built-in patterns.
     """
     def __init__(self):
         pass
@@ -42,4 +63,3 @@ if __name__ == "__main__":
                         )
 
     unittest.main()
-

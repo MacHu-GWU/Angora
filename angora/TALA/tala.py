@@ -1,8 +1,15 @@
-##encoding=UTF8
+##encoding=utf-8
 
 """
-tala
-----
+Copyright (c) 2015 by Sanhe Hu
+------------------------------
+    Author: Sanhe Hu
+    Email: husanhe@gmail.com
+    Lisence: LGPL
+
+
+Module description
+------------------
     tala is a fast, small and portable document search engine.
     set up the database is super easy:
         1. define the Schema, Fields
@@ -15,13 +22,25 @@ tala
         2. add some criterion
         3. tala!
     
-author: Sanhe Hu
+    
+Keyword
+-------
+    search engine, sqlite3, database
 
-compatibility: python3 ONLY
 
-prerequisites: angora.SQLITE
+Compatibility
+-------------
+    Python2: No
+    Python3: Yes
+    
+    
+Prerequisites
+-------------
+    angora.SQLITE
 
-import:
+
+Import Command
+--------------
     from angora.TALA.tala import FieldType, Field, Schema, SearchEngine
 """
 

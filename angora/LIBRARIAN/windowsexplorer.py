@@ -1,17 +1,41 @@
-##encoding=UTF8
+##encoding=utf-8
 
-"""在python2中, 若路径有非ascii字符, 会带来许多错误, 所以本模组最好在python3环境中使用
-本模组是对于windows中的directory和file系统, 提供了多种:
-    对文件夹, 文件进行for循环的方法
-    选择文件夹中的全部文件, 部分文件, 将选中的文件排序
-    文件夹, 文件便捷重命名方法
+"""
+Copyright (c) 2015 by Sanhe Hu
+------------------------------
+    Author: Sanhe Hu
+    Email: husanhe@gmail.com
+    Lisence: LGPL
 
-compatibility: compatible to python2 and python3, BUT recommend python3 only
+Module description
+------------------
+    在python2中, 若路径有非ascii字符, 会带来许多错误, 所以本模组最好在python3环境中使用
+    本模组是对于windows中的directory和file系统, 提供了多种:
+        对文件夹, 文件进行for循环的方法
+        选择文件夹中的全部文件, 部分文件, 将选中的文件排序
+        文件夹, 文件便捷重命名方法
 
-prerequisites: None
 
-import
-    from angora.LIBRARIAN.windowsexplorer import WinFile, WinDir, FileCollections, WinExplorer, string_SizeInBytes
+Keyword
+-------
+    file system, os
+
+
+Compatibility
+-------------
+    Python2: Yes for non-ascii char in file system, but recommend using in python3 only
+    Python3: Yes
+
+
+Prerequisites
+-------------
+    None
+
+
+Import Command
+--------------
+    from (angora.LIBRARIAN.windowsexplorer import WinFile, WinDir, 
+        FileCollections, WinExplorer, string_SizeInBytes
 """
 
 from __future__ import print_function

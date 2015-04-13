@@ -1,38 +1,52 @@
-##encoding=UTF8
+##encoding=utf-8
 
 """
-Configuration class implements a basic configuration language.
+Copyright (c) 2015 by Sanhe Hu
+------------------------------
+    Author: Sanhe Hu
+    Email: husanhe@gmail.com
+    Lisence: LGPL
     
-What is Configuration Language? 
--------------------------------
-Here's an example
+Module description
+------------------
+    configuration is a simple configuration language file read and write tools.
 
-    [DEFAULT]
-    key1 = value1
-    key2 = value2...
-    
-    [section name]
-    key1 = integer_value # 整数
-    key2 = real_value # 实数
-    key3 = string_value # 普通字符串
-    key4 = 'special_string' or "special_string" # 特殊字符串, 即不管内容是什么, 都解释为字符串
-    key5 = list_of_integer_or_real_or_string_or_bool # 整数, 实数, 字符串或是布尔值的列表
-    key6 = boolean_value # 布尔值, 可以自动解释 yes, no, true, false, none, 大小写不敏感
-    key7 =  # 空字符串则会被解释为None
-    ...
-    '#' 符号以后的内容会被解释为注释
-    
-Features
---------
-    1. UTF-8 encoding, support non-ASCII character! (IMPORTANT)
-    2. smartly detect value type
-    3. Yes, No, True, False, None is case-insensitive.
-    
-compatibility: compatible to python3. Because this is a non-ascii character compatible package.
+    features
+        1. UTF-8 encoding, support non-ASCII character! (IMPORTANT)
+        2. smartly detect value type
+        3. Yes, No, True, False, None is case-insensitive.
+        
+    what is Configuration Language? Here's an example:
+        [DEFAULT]
+        key1 = value1
+        key2 = value2...
+        
+        [section name]
+        key1 = integer_value # 整数
+        key2 = real_value # 实数
+        key3 = string_value # 普通字符串
+        key4 = 'special_string' or "special_string" # 特殊字符串, 即不管内容是什么, 都解释为字符串
+        key5 = list_of_integer_or_real_or_string_or_bool # 整数, 实数, 字符串或是布尔值的列表
+        key6 = boolean_value # 布尔值, 可以自动解释 yes, no, true, false, none, 大小写不敏感
+        key7 =  # 空字符串则会被解释为None
+        ...
+        '#' 符号以后的内容会被解释为注释
 
-prerequisites: None
+Keyword
+-------
+    config, parser
+    
+Compatibility
+-------------
+    Python2: No (because this is designed to handle unicode stuff)
+    Python3: Yes
+    
+Prerequisites
+-------------
+    None
 
-import:
+Import Command
+--------------
     from angora.GADGET.configuration import Configuration
 """
 
@@ -177,6 +191,8 @@ class Section():
         
         
 class Configuration():
+    """Configuration class implements a basic configuration language.
+    """
     def __init__(self):
         self._sections = OrderedDict()
         self._sections["DEFAULT"] = Section("DEFAULT")

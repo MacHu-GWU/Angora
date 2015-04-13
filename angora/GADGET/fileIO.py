@@ -1,20 +1,48 @@
-##encoding=UTF8
+##encoding=utf-8
 
 """
-import:
+Copyright (c) 2015 by Sanhe Hu
+------------------------------
+    Author: Sanhe Hu
+    Email: husanhe@gmail.com
+    Lisence: LGPL
+    
+Module description
+------------------
+    
+        
+Keyword
+-------
+    IO
+    
+Compatibility
+-------------
+    Python2: Yes
+    Python3: Yes
+    
+Prerequisites
+-------------
+    None
+
+Import Command
+--------------
     from angora.GADGET.fileIO import str2file, file2str
 """
 
 from __future__ import print_function, unicode_literals
 
 def str2file(text, path):
+    """write a text to a file in utf-8
+    """
     with open(path, "wb") as f:
-        f.write(text.encode("utf8"))
+        f.write(text.encode("utf-8"))
     return
 
 def file2str(path):
+    """read text from a utf-8 encoded file
+    """
     with open(path, "rb") as f:
-        return f.read().decode("utf8")
+        return f.read().decode("utf-8")
     
 if __name__ == "__main__":
     import unittest

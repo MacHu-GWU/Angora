@@ -1,20 +1,40 @@
-##encoding=UTF8
+##encoding=utf-8
 
 """
-pytimer
+Copyright (c) 2015 by Sanhe Hu
+------------------------------
+    Author: Sanhe Hu
+    Email: husanhe@gmail.com
+    Lisence: LGPL
+    
+    
+Module description
+------------------
+    pytimer is a time application can easily measure, display and store time.
+    
+    
+Keyword
 -------
-    一个用于测量代码运行时间的小工具
+    time, gadget
+    
+    
+Compatibility
+-------------
+    Python2: Yes
+    Python3: Yes
 
-compatibility: compatible to python2 and python3
 
-prerequisites: None
+Prerequisites
+-------------
+    None
 
-import:
+
+Import Command
+--------------
     from angora.GADGET.pytimmer import Timer
 """
 
 from __future__ import print_function
-import datetime
 import timeit
 import time
 
@@ -57,9 +77,8 @@ class Timer():
     def click(self):
         """record the current time and last time elapse. repeat this when you click() again
         """
-        now = time.clock()
-        self.records.append( (datetime.datetime.now(), now - self.st) )
-        self.st = now
+        self.records.append(time.clock() - self.st)
+        self.st = time.clock()
 
 if __name__ == "__main__":
     timer = Timer()
@@ -105,7 +124,7 @@ if __name__ == "__main__":
             if (i % 1000) == 0:
                 timer.click()
         
-        for k, v in timer.records:
-            print(k, v)
+        for i in timer.records:
+            print(i)
         
 #     usage_clicker()

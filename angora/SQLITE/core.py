@@ -1,8 +1,15 @@
-##encoding=UTF8
+##encoding=utf-8
 
 """
-SQLITE
-------
+Copyright (c) 2015 by Sanhe Hu
+------------------------------
+    Author: Sanhe Hu
+    Email: husanhe@gmail.com
+    Lisence: LGPL
+    
+    
+Module description
+------------------
     SQLITE is a Python sqlite3 SQL toolkit that gives application developers the full power and
     flexibility of SQL. Sounds like SqlAlchemy? Right! But in sqlite3, it's even faster than
     SqlAlchemy. And SQLITE is easier to be extend with User Customized DataType, transaction flow.
@@ -11,14 +18,26 @@ SQLITE
     Why it's faster than SqlAlchemy in sqlite?
         because sqlite is single writer database designed for simple but high volumn I/O task.
         so SqlAlchemy is like 3-5 slower than the original python sqlite3 API.
+    
+    
+Keyword
+-------
+    sqlite3, database
+    
+    
+Compatibility
+-------------
+    Python2: No
+    Python3: Yes
 
-author: Sanhe Hu
 
-compatibility: python3 ONLY
+Prerequisites
+-------------
+    None
 
-prerequisites: None
 
-import:
+Import Command
+--------------
     from .core import MetaData, Sqlite3Engine, Table, Column, DataType, Row, Select
 """
 
