@@ -177,6 +177,15 @@ class SimpleCrawler():
         except:
             return None
     
+    def html_with_encoding(self, url, timeout=None, encoding="utf-8"):
+        """manually get html with user encoding setting
+        """
+        response = self.get_response(url, timeout=timeout)
+        if response:
+            return self.decoder.decode(response.content, encoding)[0]
+        else:
+            return None
+        
     def html(self, url, timeout=None):
         """high level method to get http request response in text.
         smartly handle the encoding problem.
@@ -194,6 +203,7 @@ class SimpleCrawler():
             else: # never visit this domain 
                 try:
                     html, encoding = self.decoder.autodecode(response.content)
+                    print(html)
                     self.domain_encoding_map[domain] = encoding # save chardet analysis result
                     return html
                 except:

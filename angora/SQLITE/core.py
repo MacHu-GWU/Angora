@@ -1410,6 +1410,19 @@ if __name__ == "__main__":
             self.assertEqual((-test.integer_type).sqlcmd, "+ integer_type")
             self.assertEqual((+test.integer_type).sqlcmd, "- integer_type")
             
+        def test_sql_value(self):
+            self.assertEqual(test.integer_type.__SQL__(1), "1")
+            self.assertEqual(test.real_type.__SQL__(1.1), "1.1")
+            self.assertEqual(test.text_type.__SQL__("abc"), "'abc'")
+            self.assertEqual(test.date_type.__SQL__(date(2014,1,1)), "'2014-01-01'")
+            self.assertEqual(test.datetime_type.__SQL__(datetime(2014,1,1,0,6,30)), "'2014-01-01 00:06:30'")
+            self.assertEqual(test.pickle_type.__SQL__([1,2,3]), "X'80035d7100284b014b024b03652e'")
+            self.assertEqual(test.strlist_type.__SQL__(StrList(["a","b","c"])), "'a&&b&&c'")
+#             self.assertEqual(test.intlist_type.__SQL__(1), "1")
+#             self.assertEqual(test.strset.__SQL__(1), "1")
+#             self.assertEqual(test.intset_type.__SQL__(1), "1")
+
+#             self.assertEqual(test.integer_type.__SQL__(1), "1")
             
     class SqliteEngineUnittest(unittest.TestCase):
         def test_select(self):
