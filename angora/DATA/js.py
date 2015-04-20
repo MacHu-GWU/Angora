@@ -1,29 +1,53 @@
-##encoding=UTF8
+##encoding=utf-8
 
 """
-
-This module is re-pack of some json utility functions
-    load_js
-        load json object from file
-        
-    dump_js
-        dump json object to file.
-        
-    safe_dump_js
-        It's safe because that it dump to a temporary file first, then finally rename it.
-        
-    js2str
-        convert dict to human readable string
+Copyright (c) 2015 by Sanhe Hu
+------------------------------
+    Author: Sanhe Hu
+    Email: husanhe@gmail.com
+    Lisence: LGPL
     
-    prt_js
-        print dict in a human readable format with pretty indent
+
+Module description
+------------------
+    This module is re-pack of some json utility functions
+        load_js
+            load json object from file
+            
+        dump_js
+            dump json object to file.
+            
+        safe_dump_js
+            It's safe because that it dump to a temporary file first, then finally rename it.
+            Which prevent in-complete file caused by interrupted while writing
+            
+        js2str
+            stringlize dictionary to human readable string
         
-compatibility: compatible to python2 and python3
+        prt_js
+            print dictionary in a human readable format with pretty indent
+        
+        
+Keyword
+-------
+    json, IO
+    
+    
+Compatibility
+-------------
+    Python2: Yes
+    Python3: Yes
+    
+    
+Prerequisites
+-------------
+    None
 
-prerequisites: None
 
-import:
+Import Command
+--------------
     from angora.DATA.js import load_js, dump_js, safe_dump_js, js2str, prt_js 
+    
 """
 
 from __future__ import print_function
@@ -45,7 +69,8 @@ def load_js(fname, enable_verbose = True):
         st = time.clock()
         
     if os.path.exists(fname): # exists, then load
-        js = json.load(open(fname, read_mode) )
+        with open(fname, read_mode) as f:
+            js = json.load(f)
         if enable_verbose:
             print("\tComplete! Elapse %s sec." % (time.clock() - st) )
         return js
@@ -77,18 +102,22 @@ def dump_js(js, fname, fastmode = False, replace = False, enable_verbose = True)
     if os.path.exists(fname): # if exists, check replace option
         if replace: # replace existing file
             if fastmode: # no sort and indent, do the fastest dumping
-                json.dump(js, open(fname, write_mode))
+                with open(fname, write_mode) as f:
+                    json.dump(js, f)
             else:
-                json.dump(js, open(fname, write_mode), sort_keys=True, indent=4,separators=("," , ": ") )
+                with open(fname, write_mode) as f:
+                    json.dump(js, f, sort_keys=True, indent=4,separators=("," , ": ") )
         else: # stop, print error message
             raise Exception("\tCANNOT WRITE to %s, it's already exists" % fname)
                 
     
     else: # if not exists, just write to it
         if fastmode: # no sort and indent, do the fastest dumping
-            json.dump(js, open(fname, write_mode))
+            with open(fname, write_mode) as f:
+                json.dump(js, f)
         else:
-            json.dump(js, open(fname, write_mode), sort_keys=True, indent=4,separators=("," , ": ") )
+            with open(fname, write_mode) as f:
+                json.dump(js, f, sort_keys=True, indent=4,separators=("," , ": ") )
             
     if enable_verbose:
         print("\tComplete! Elapse %s sec" % (time.clock() - st) )
@@ -120,3 +149,30 @@ def js2str(js, sort_keys=True):
 def prt_js(js, sort_keys=True):
     """print dict object with pretty format"""
     print(js2str(js, sort_keys) )
+    
+############
+# Unittest #
+############
+
+if __name__ == "__main__":
+    import unittest
+    
+    class JSUnittest(unittest.TestCase):
+        def test_write_and_read(self):
+            data = {"a": [1, 2], "b": ["是", "否"]} 
+            safe_dump_js(data, "data.json")
+            data = load_js("data.json")
+            self.assertEqual(data["a"][0], 1)
+            self.assertEqual(data["b"][0], "是")
+            
+        def test_js2str(self):
+            data = {"a": [1, 2], "b": ["是", "否"]} 
+            prt_js(data)
+        
+        def tearDown(self):
+            try:
+                os.remove("data.json")
+            except:
+                pass
+            
+    unittest.main()

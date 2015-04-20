@@ -1,14 +1,39 @@
-##encoding=UTF8
+##encoding=utf-8
 
 """
-This module is re-pack of some hashlib utility functions
-    1. md5 a string
-    2. md5 a python object
-    3. md5 a file
+Copyright (c) 2015 by Sanhe Hu
+------------------------------
+    Author: Sanhe Hu
+    Email: husanhe@gmail.com
+    Lisence: LGPL
+    
 
-compatible: python2 and python3
+Module description
+------------------
+    This module is re-pack of some hashlib utility functions
+        1. md5 a string
+        2. md5 a python object
+        3. md5 a file
 
-import:
+
+Keyword
+-------
+    hash, md5
+
+
+Compatibility
+-------------
+    Python2: Yes
+    Python3: Yes
+    
+    
+Prerequisites
+-------------
+    None
+
+
+Import Command
+--------------
     from angora.DATA.hashutil import md5_str, md5_obj, md5_file, hash_obj
 """
 

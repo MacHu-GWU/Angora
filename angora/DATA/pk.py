@@ -1,28 +1,52 @@
 ##encoding=UTF8
 
 """
-This module is re-pack of some pickle utility functions
-    load_pk
-        load object from pickle file
-        
-    dump_pk
-        dump object to pickle file
+Copyright (c) 2015 by Sanhe Hu
+------------------------------
+    Author: Sanhe Hu
+    Email: husanhe@gmail.com
+    Lisence: LGPL
     
-    safe_dump_pk
-        it's safe because that it dump to a temporary file first, then finally rename it.
-        
-    obj2str
-        convert arbitrary object to database friendly string, using base64encode algorithm
-        
-    str2obj
-        recovery object from base64 encoded string
-        
-compatibility: compatible to python2 and python3
 
-prerequisites: None
+Module description
+------------------
+    This module is re-pack of some pickle utility functions
+        load_pk
+            load object from pickle file
+            
+        dump_pk
+            dump object to pickle file
+        
+        safe_dump_pk
+            it's safe because that it dump to a temporary file first, then finally rename it.
+            
+        obj2str
+            convert arbitrary object to database friendly string, using base64encode algorithm
+            
+        str2obj
+            recovery object from base64 encoded string
+        
+        
+Keyword
+-------
+    pickle, IO
+    
+    
+Compatibility
+-------------
+    Python2: Yes
+    Python3: Yes
+    
+    
+Prerequisites
+-------------
+    None
 
-import:
+
+Import Command
+--------------
     from angora.DATA.pk import load_pk, dump_pk, safe_dump_pk, obj2bytestr, bytestr2obj, obj2str, str2obj
+    
 """
 
 from __future__ import print_function
@@ -43,7 +67,8 @@ def load_pk(fname, enable_verbose = True):
     if enable_verbose:
         print("\nLoading from %s..." % fname)
         st = time.clock()
-    obj = pickle.load(open(fname, "rb"))
+    with open(fname, "rb") as f:
+        obj = pickle.load(f)
     if enable_verbose:
         print("\tComplete! Elapse %s sec." % (time.clock() - st) )
     return obj
@@ -70,11 +95,13 @@ def dump_pk(obj, fname, pickle_protocol = pk_protocol, replace = False, enable_v
     
     if os.path.exists(fname): # if exists, check replace option
         if replace: # replace existing file
-            pickle.dump(obj, open(fname, "wb"), protocol = pickle_protocol)
+            with open(fname, "wb") as f:
+                pickle.dump(obj, f, protocol = pickle_protocol)
         else: # stop, print error message
             raise Exception("\tCANNOT WRITE to %s, it's already exists" % fname)
     else: # if not exists, just write to it
-        pickle.dump(obj, open(fname, "wb"), protocol = pickle_protocol)
+        with open(fname, "wb") as f:
+            pickle.dump(obj, f, protocol = pickle_protocol)
         
     if enable_verbose:
         print("\tComplete! Elapse %s sec" % (time.clock() - st) )
@@ -114,4 +141,54 @@ def obj2str(obj, pickle_protocol = pk_protocol):
 def str2obj(textstr):
     """recovery object from base64 encoded string"""
     return pickle.loads(base64.b64decode(textstr))
+
+############
+# Unittest #
+############
+
+if __name__ == "__main__":
+    import unittest
+    import sqlite3
     
+    class PKUnittest(unittest.TestCase):
+        def test_write_and_read(self):
+            data = {1: [1, 2], 2: ["是", "否"]} 
+            safe_dump_pk(data, "data.p")
+            data = load_pk("data.p")
+            print(data)
+            self.assertEqual(data[1][0], 1)
+            self.assertEqual(data[2][0], "是")
+            
+        def test_obj2bytestr(self):
+            """pickle.dumps的结果是bytes, 而在python2中的sqlite不支持bytes直接插入数据库,
+            必须使用base64.encode将bytes编码成字符串之后才能存入数据库。
+            而在python3中, 可以直接将pickle.dumps的bytestr存入数据库, 这样就省去了base64编码的开销
+             
+            Will not pass in Python2, because pickle.loads unable to parse non-ascii code
+            """         
+            conn = sqlite3.connect(":memory:")
+            c = conn.cursor()
+            c.execute("CREATE TABLE test (dictionary BLOB) ") # BLOB is byte
+            c.execute("INSERT INTO test VALUES (?)", 
+                      (obj2bytestr({1:"a", 2:"你好"}),))
+              
+            print(c.execute("select * from test").fetchone()) # see what stored in database
+            print(bytestr2obj(c.execute("select * from test").fetchone()[0])) # recovery object from byte str
+ 
+        def test_obj2str(self):
+            conn = sqlite3.connect(":memory:")
+            c = conn.cursor()
+            c.execute("CREATE TABLE test (name TEXT) ")
+            c.execute("INSERT INTO test VALUES (?)", 
+                      (obj2str({1:"a", 2:"你好"}),))
+              
+            print(c.execute("select * from test").fetchone()) # see what stored in database
+            print(str2obj(c.execute("select * from test").fetchone()[0])) # recovery object from text str
+        
+        def tearDown(self):
+            try:
+                os.remove("data.p")
+            except:
+                pass
+            
+    unittest.main()

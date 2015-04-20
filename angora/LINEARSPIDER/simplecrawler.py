@@ -20,23 +20,28 @@ Module description
         5. Easily save html text to a local file.
         6. Easily download binary file at url.
         
+        
 Keyword
 -------
     crawler, tool
+    
     
 Compatibility
 -------------
     Python2: Yes
     Python3: Yes
     
+    
 Prerequisites
 -------------
     requests > 2.3.0, https://pypi.python.org/pypi/requests
     chardet > 2.2.1, https://pypi.python.org/pypi/chardet
 
+
 Import Command
 --------------
-    from angora.LINEARSPIDER.simplecrawler import SmartDecoder, SimpleCrawler
+    from angora.LINEARSPIDER.simplecrawler import (
+        SmartDecoder, smtdecoder, SimpleCrawler, spider)
     
 """
 
@@ -198,15 +203,16 @@ class SimpleCrawler():
                     html = self.decoder.decode(response.content, 
                                                self.domain_encoding_map[domain])[0]
                     return html
-                except:
+                except Exception as e:
+                    print(e)
                     return None
             else: # never visit this domain 
                 try:
                     html, encoding = self.decoder.autodecode(response.content)
-                    print(html)
                     self.domain_encoding_map[domain] = encoding # save chardet analysis result
                     return html
-                except:
+                except Exception as e:
+                    print(e)
                     return None
         else:
             return None
@@ -221,10 +227,11 @@ class SimpleCrawler():
                     if not block:
                         break
                     f.write(block)
-    
-if __name__ == "__main__":
-    spider = SimpleCrawler()
-    
+
+smtdecoder = SmartDecoder()
+spider = SimpleCrawler()
+
+if __name__ == "__main__":    
     url = "http://www.caribbeancom.com/moviepages/010103-304/index.html"
     html = spider.html(url)
     print(type(html))

@@ -33,13 +33,13 @@ if __name__ == "__main__":
         plt.show()
     
 #     interpolate_test()
-    
+     
     def interpolate_datetime_test():
         x = pd.date_range("2014-01-01 00:00:00", "2014-01-02 01:00:00", freq = "2H")
         y = np.cos( np.linspace(0, 10, len(x) ) ** 2 / 8.0 )
         x_new = pd.date_range("2014-01-01 00:00:00", "2014-01-01 23:59:59", freq = "10min")
-        y_cubic = interpolation_datetime(x, y, x_new)
-        y_linear = interpolation_datetime(x, y, x_new, kind="linear")
+        y_cubic = interpolate_datetime(x, y, x_new)
+        y_linear = interpolate_datetime(x, y, x_new, kind="linear")
         plt.plot(x, y, "o",
                  x_new, y_cubic, "g-",
                  x_new, y_linear, "r--")

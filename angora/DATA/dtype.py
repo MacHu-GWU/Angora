@@ -1,13 +1,38 @@
-##encoding=UTF8
+##encoding=utf-8
 
 """
-[EN] A set of tools for data structure and data type
-[CN] 一些与基本数据结构，数据类型有关的工具箱
-DtypeConverter 数据类型转换器
-OrderedSet 有序集合
-SuperSet 能同时intersect, union多个集合
+Copyright (c) 2015 by Sanhe Hu
+------------------------------
+    Author: Sanhe Hu
+    Email: husanhe@gmail.com
+    Lisence: LGPL
+    
+Module description
+------------------
+    [EN] A set of tools for data structure and data type
+    [CN] 一些与基本数据结构，数据类型有关的工具箱
+        OrderedSet 有序集合
+        StrSet, IntSet, StrList, IntList, 用于将 字符串/整数 集合/数组 转化为字符串。
+            以用于数据库的IO
 
-import:
+Keyword
+-------
+    date type, set, list
+    
+
+Compatibility
+-------------
+    Python2: Yes
+    Python3: Yes
+
+
+Prerequisites
+-------------
+    None
+
+
+Import Command
+--------------
     from angora.Data.dtype import OrderedSet, StrSet, IntSet, StrList, IntList
 """
 
@@ -15,7 +40,10 @@ from __future__ import print_function
 import collections
 
 class OrderedSet(collections.MutableSet):
-    """Set that remembers original insertion order."""
+    """Set that remembers original insertion order.
+    orginally from http://code.activestate.com/recipes/576694/
+    add union(*argv), intersect(*argv) method
+    """
     def __init__(self, iterable=None):
         self.end = end = [] 
         end += [None, end, end]         # sentinel node for doubly linked list
@@ -57,15 +85,15 @@ class OrderedSet(collections.MutableSet):
 
     def pop(self, last=True):
         if not self:
-            raise KeyError('set is empty')
+            raise KeyError("set is empty")
         key = self.end[1][0] if last else self.end[2][0]
         self.discard(key)
         return key
 
     def __repr__(self):
         if not self:
-            return '%s()' % (self.__class__.__name__,)
-        return '%s(%r)' % (self.__class__.__name__, list(self))
+            return "%s()" % (self.__class__.__name__,)
+        return "%s(%r)" % (self.__class__.__name__, list(self))
 
     def __eq__(self, other):
         if isinstance(other, OrderedSet):
@@ -151,49 +179,49 @@ class IntList(list):
             return IntList([int(s) for s in _STRING.split("&&")])
         
 if __name__ == "__main__":
-    def test_OrderedSet():
-        def orderedSet_UT1():
-            print("{:=^30}".format("orderedSet_UT1"))
+    import unittest
+    
+    class UserDefinedUnittest(unittest.TestCase):
+        def test_OrderedSet1(self):
             s = OrderedSet(list())
             s.add("c")
             s.add("g")
             s.add("a")
+            self.assertListEqual(list(s), ["c", "g", "a"])
             s.discard("g")
-            print(s)
-            print(list(s))
+            self.assertListEqual(list(s), ["c", "a"])
+        
+        def test_OrderedSet2(self):
+            s = OrderedSet("abracadaba") # {"a", "b", "r", "c", "d"}
+            t = OrderedSet("simcsalabim") # {"s", "i", "m", "c", "a", "l", "b"}
+            self.assertListEqual(list(s | t), ["a", "b", "r", "c", "d", "s", "i", "m", "l"]) # s union t
+            self.assertListEqual(list(s & t), ["c", "a", "b"]) # s intersect t
+            self.assertListEqual(list(s - t), ["r", "d"]) # s different t
+        
+        def test_OrderedSet3(self):
+            r = OrderedSet("buag") # {"b", "u", "a", "g"}
+            s = OrderedSet("abracadaba") # {"a", "b", "r", "c", "d"}
+            t = OrderedSet("simcsalabim") # {"s", "i", "m", "c", "a", "l", "b"}
+            self.assertListEqual(list(OrderedSet.union(r, s, t)), # r union s union t
+                                 ["b", "u", "a", "g", "r", "c", "d", "s", "i", "m", "l"]) 
+            self.assertListEqual(list(OrderedSet.intersection(r, s, t)), # r intsect s and t
+                                 ["b", "a"])
+        
+        def test_all(self): # use chinese character to text utf-8 compatibility
+            strset = StrSet(["是", "是", "否", "否"])
+            self.assertIn(StrSet.sqlite3_adaptor(strset), ["是&&否", "否&&是"])
+            self.assertSetEqual(StrSet.sqlite3_converter("是&&否"), StrSet(["是", "否"]))
             
-        def orderedSet_UT2():
-            print("{:=^30}".format("orderedSet_UT2"))
-            s = OrderedSet('abracadaba') # {"a", "b", "r", "c", "d"}
-            t = OrderedSet('simcsalabim') # {"s", "i", "m", "c", "a", "l", "b"}
-            print(s | t) # s union t
-            print(s & t) # s intersect t
-            print(s - t) # s different t
-
-        def orderedSet_UT3():
-            print("{:=^30}".format("orderedSet_UT3"))
-            r = OrderedSet('buag') # {"b", "u", "a", "g"}
-            s = OrderedSet('abracadaba') # {"a", "b", "r", "c", "d"}
-            t = OrderedSet('simcsalabim') # {"s", "i", "m", "c", "a", "l", "b"}
-
-            print(OrderedSet.union(r, s, t))
-            print(OrderedSet.intersection(r, s, t))
+            intset = IntSet([1, 1, 2, 2])
+            self.assertIn(IntSet.sqlite3_adaptor(intset), ["1&&2", "2&&1"])
+            self.assertSetEqual(IntSet.sqlite3_converter("1&&2"), StrSet([1, 2]))
             
-        print("{:=^40}".format("test_OrderedSet"))
-        orderedSet_UT1()
-        orderedSet_UT2()
-        orderedSet_UT3()
-        
-#     test_OrderedSet()
-
-    def test_set_and_list():
-        s = StrSet(["1", "2", "3"])
-        s.add("4")
-        print(s, type(s))
-        
-        l = StrList(["1", "2", "3"])
-        l.append("4")
-        print(l, type(l))
-        
-#     test_set_and_list()
-    
+            strlist = StrList(["是", "是", "否", "否"])
+            self.assertIn(StrList.sqlite3_adaptor(strlist), ["是&&是&&否&&否"])
+            self.assertListEqual(StrList.sqlite3_converter("是&&否"), StrList(["是", "否"]))
+            
+            intlist = IntList([1, 1, 2, 2])
+            self.assertIn(IntList.sqlite3_adaptor(intlist), ["1&&1&&2&&2"])
+            self.assertListEqual(IntList.sqlite3_converter("1&&2"), IntList([1, 2]))           
+            
+    unittest.main()

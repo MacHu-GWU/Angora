@@ -1,14 +1,36 @@
-##encoding=UTF8
+##encoding=utf-8
 
 """
-author: Sanhe Hu
+Copyright (c) 2015 by Sanhe Hu
+------------------------------
+    Author: Sanhe Hu
+    Email: husanhe@gmail.com
+    Lisence: LGPL
+    
 
-compatibility: python2, python3 
+Module description
+------------------
+    
 
-prerequisites: fuzzywuzzy
+Keyword
+-------
+    string
+    
+    
+Compatibility
+-------------
+    Python2: Yes
+    Python3: Yes
 
-import:
-    from angora.STRING.stringmatch import StrMatcher
+
+Prerequisites
+-------------
+    fuzzywuzzy
+
+
+Import Command
+--------------
+    from angora.STRING.stringmatch import smatcher
 """
 
 from __future__ import print_function
@@ -22,16 +44,15 @@ class StrMatcher():
         else:
             return text
         
-    def choose_test(self, text, choice):
+    def test_choose(self, text, choice):
         for pair in process.extract(text, choice):
             print(pair)
-        
+
+smatcher = StrMatcher()
+
 if __name__ == "__main__":
-    matcher = StrMatcher()
-    
     choice = ["Atlanta Falcons", "New Cow Jets", "Tom boy", "New York Giants", "Dallas Cowboys"]
-    
     text = "cowboy"
-#     matcher.choose(text, choice)
-    matcher.choose_test(text, choice)
+    smatcher.choose(text, choice)
+    smatcher.test_choose(text, choice)
     

@@ -1,8 +1,8 @@
 ##encoding=UTF8
 
-from .formatmaster import FormatMaster, Template, Converter
-from .reRecipe import ReParser
+from .formatmaster import fmter
+from .reRecipe import reparser
 try:
-    from .stringmatch import StrMatcher
+    from .stringmatch import smatcher
 except:
     pass

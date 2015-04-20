@@ -108,7 +108,7 @@ def import_help():
     running_windows, cycle_running_windows, cycle_slice, count_generator)""",
     "from angora.DATA.js import load_js, dump_js, safe_dump_js, prt_js, js2str",
     "from angora.DATA.pk import load_pk, dump_pk, safe_dump_pk, obj2bytestr, bytestr2obj, obj2str, str2obj",
-    "from angora.DATA.timewrapper import TimeWrapper",
+    "from angora.DATA.timewrapper import timewrapper",
     ]
     print("\n{:=^100}".format("angora.DATA"))
     print("\n".join(DATA_modules))
@@ -151,9 +151,9 @@ def import_help():
     print("\n".join(PandasSQL_modules))
     
     STRING_modules = [
-    "from angora.STRING.formatmaster import FormatMaster, Template, Converter",
-    "from angora.STRING.reRecipe import ReParser",
-    "from angora.STRING.stringmatch import StrMatcher",
+    "from angora.STRING.formatmaster import fmter",
+    "from angora.STRING.reRecipe import reparser",
+    "from angora.STRING.stringmatch import smatcher",
     ]
     print("\n{:=^100}".format("angora.STRING"))
     print("\n".join(STRING_modules))

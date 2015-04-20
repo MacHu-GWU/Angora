@@ -1071,7 +1071,8 @@ class Table():
 class Sqlite3Engine():
     def __init__(self, dbname, autocommit=True):
         self.dbname = dbname
-
+        self.autocommit = autocommit
+        
         sqlite3.register_adapter(list, adapt_list)
         sqlite3.register_converter("PYTHONLIST", convert_list)
         
@@ -1190,7 +1191,7 @@ class Sqlite3Engine():
         """
         try:
             self._insert_many_rows_generator_mode(insert_obj, rows)
-        except TypeError:
+        except:
             self._insert_many_rows_list_mode(insert_obj, rows)
     
     ### === insert and update ===
@@ -1306,10 +1307,7 @@ if __name__ == "__main__":
     from datetime import datetime, date, timedelta
     import random
     
-    tpl = Template()
-    tw = TimeWrapper()
-    
-    engine = Sqlite3Engine(":memory:")
+    engine = Sqlite3Engine(":memory:", autocommit=False)
     metadata = MetaData()
     dtype = DataType()
     test = Table("test", metadata,
@@ -1332,9 +1330,9 @@ if __name__ == "__main__":
         row = dict()
         row["integer_type"] = i
         row["real_type"] = random.random()
-        row["text_type"] = tpl.randstr(32)
-        row["date_type"] = tw.randdate("2014-01-01", "2014-12-31")
-        row["datetime_type"] = tw.randdatetime("2014-01-01 00:00:00", "2014-12-31 23:59:59")
+        row["text_type"] = fmter.tpl.randstr(32)
+        row["date_type"] = timewrapper.randdate("2014-01-01", "2014-12-31")
+        row["datetime_type"] = timewrapper.randdatetime("2014-01-01 00:00:00", "2014-12-31 23:59:59")
         row["pickle_type"] = {1: "a", 2: "b", 3: "c"}
         row["strlist_type"] = StrList(["a", "b", "c"])
         row["intlist_type"] = IntList([1, 2, 3])
@@ -1418,11 +1416,6 @@ if __name__ == "__main__":
             self.assertEqual(test.datetime_type.__SQL__(datetime(2014,1,1,0,6,30)), "'2014-01-01 00:06:30'")
             self.assertEqual(test.pickle_type.__SQL__([1,2,3]), "X'80035d7100284b014b024b03652e'")
             self.assertEqual(test.strlist_type.__SQL__(StrList(["a","b","c"])), "'a&&b&&c'")
-#             self.assertEqual(test.intlist_type.__SQL__(1), "1")
-#             self.assertEqual(test.strset.__SQL__(1), "1")
-#             self.assertEqual(test.intset_type.__SQL__(1), "1")
-
-#             self.assertEqual(test.integer_type.__SQL__(1), "1")
             
     class SqliteEngineUnittest(unittest.TestCase):
         def test_select(self):

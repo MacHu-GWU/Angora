@@ -6,30 +6,34 @@ Copyright (c) 2015 by Sanhe Hu
     Author: Sanhe Hu
     Email: husanhe@gmail.com
     Lisence: LGPL
-    
+
 
 Module description
 ------------------
     This module is to make regular expression easier to use.
     With some built-in compiled pattern, we can use human language to generate
     re pattern.
-        
+
+
 Keyword
 -------
     re, string
-    
+
+ 
 Compatibility
 -------------
     Python2: Yes
     Python3: Yes
-    
+
+
 Prerequisites
 -------------
     None
-
+    
+    
 Import Command
 --------------
-    from angora.STRING.reRecipe import ReParser
+    from angora.STRING.reRecipe import reparser
 """
 
 from __future__ import print_function, unicode_literals
@@ -46,13 +50,14 @@ class ReParser():
         """
         pattern = r"""(?<=%s)[\s\S]{1,%s}(?=%s)""" % (prefix, maxlen, surfix)
         return re.findall(pattern, text)
-      
+
+reparser = ReParser()
+
 if __name__ == "__main__":
     import unittest
     
     class ReParserUnittest(unittest.TestCase):
         def test_extract_by_prefix_surfix(self):
-            reparser = ReParser()
             self.assertEqual(
                         reparser.extract_by_prefix_surfix(
                              "<div>", 

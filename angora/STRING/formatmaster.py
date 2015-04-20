@@ -1,4 +1,4 @@
-##encoding=UTF8
+##encoding=utf-8
 
 """
 Copyright (c) 2015 by Sanhe Hu
@@ -10,31 +10,37 @@ Copyright (c) 2015 by Sanhe Hu
 
 Module description
 ------------------
-        
+    
+
 Keyword
 -------
     string
+    
     
 Compatibility
 -------------
     Python2: Yes
     Python3: Yes
-    
+
+
 Prerequisites
 -------------
     None
 
+
 Import Command
 --------------
-    from angora.STRING.formatmaster import FormatMaster
+    from angora.STRING.formatmaster import fmter
 """
 
 from __future__ import print_function
 import random
 
 class Template():
-    """用于从模板产生字符串, 或者直接打印产生的字符串
-    以 "_" 开头的方法都是直接打印产生的字符串
+    """
+    [EN]generate string from built-in templates. method start with '_' means print the string
+    instead of returnning it.
+    [CN]用于根据模板产生字符串, 或者直接打印产生的字符串。以'_'开头的方法都是直接打印产生的字符串
     """
     def __init__(self):
         self.alphalower = list("abcdefghijklmnopqrstuvwxyz")
@@ -58,7 +64,6 @@ class Template():
     def _pad_indent(self, text, num_of_indent = 1):
         print(self.pad_indent(text = text, num_of_indent = num_of_indent))
     
-    
     def randstr(self, length):
         """generate random x-length alpha number string
         """
@@ -66,8 +71,13 @@ class Template():
         for _ in range(length): # naive method
             s.append(random.choice(self.alnum))
         return "".join(s)
-    
+
+
 class Converter():
+    """
+    [EN]A text format process. Like that captialize first letter, lower other.
+    [CN]用于按一定规则处理字符串。
+    """
     def strip_formatter(self, text):
         return text.strip()
     
@@ -127,72 +137,77 @@ class Converter():
         """对于tag类的字符, 不允许有[",", " ", "\t", "\n"]等这一类的特殊字符, 最标准的tag类字符是只由
         字母, 数字, 下划线构成的字符串
         """
-        text = text.strip()
+        text = text.strip().lower()
         if len(text) == 0: # 如果是空字符串, 则依旧保留空字符串
             return text
         else:
             # 按照空格拆分单词, 多个空格按一个空格对待
-            chunks = [chunk for chunk in text.split(" ") if len(chunk)>=1]
+            chunks = [chunk[0].upper() + chunk[1:] for chunk in text.split(" ") if len(chunk)>=1]
             return "_".join(chunks)
-        
-        
+
 class FormatMaster():
-    """字符串格式转换器
+    """
+    [EN]A abstract class to execute Converter and manipulate Template
+    [CN]字符串格式转换器
     """
     def __init__(self):
-        self.template = Template()
-        self.converter = Converter()
+        self.tpl = Template()
+        self.cvt = Converter()
         
     def convert(self, converter, text):
         return converter(text)
     
-    def convert_list(self, converter, list_of_text):
+    def convert_list(self, list_of_text, converter):
         return [converter(text) for text in list_of_text]
     
-    def convert_set(self, converter, set_of_text):
+    def convert_set(self, set_of_text, converter):
         return {converter(text) for text in set_of_text}
 
-if __name__ == "__main__":
-    fm = FormatMaster()
-    
-    def FormatMaster_Template_unittest():
-        print(fm.template.straightline("straight line", 60, "-"))
-        fm.template._straightline("straight line", 60, "-")
 
-        print(fm.template.pad_indent("some message", 2))
-        fm.template._pad_indent("some message", 2)
-        
-        print(fm.template.randstr(32))
-        
-    FormatMaster_Template_unittest()
+fmter = FormatMaster()
+
+if __name__ == "__main__":
+    import unittest
     
-    def FormatMaster_Converter_unittest():
-        testdata = [
-                    " do you want   to build  a snow man? ",
-                    "",
-                    "   Michael Jackson",
-                    "Boom! "
-                    ]
-        
-        fm.template._straightline("person_name_formatter")
-        for text in testdata:
-            print("[%s]=>[%s]" %(text, fm.convert(fm.converter.person_name_formatter, text) ) )
-    
-        fm.template._straightline("sentence_formatter")
-        for text in testdata:
-            print("[%s]=>[%s]" %(text, fm.convert(fm.converter.sentence_formatter, text) ) )
-        
-        fm.template._straightline("title_formatter")
-        for text in testdata:
-            print("[%s]=>[%s]" %(text, fm.convert(fm.converter.title_formatter, text) ) )
+    class FormatMasterUnittest(unittest.TestCase):
+        def test_Template(self):
+            self.assertEqual(fmter.tpl.straightline("straight line", 60, "-"),
+                "-----------------------straight line------------------------")
+            self.assertEqual(fmter.tpl.pad_indent("some message", 2),
+                "\t\tsome message")  
             
-        fm.template._straightline("tag_formatter")
-        for text in testdata:
-            print("[%s]=>[%s]" %(text, fm.convert(fm.converter.tag_formatter, text) ) )
-        
-        fm.template._straightline("batch_process")
-        print("%s => %s" % (testdata, 
-                            fm.convert_list(fm.converter.person_name_formatter, testdata) ) )
-        
-    FormatMaster_Converter_unittest()
-    
+        def test_Converter(self):
+            self.assertEqual(
+                fmter.cvt.strip_formatter(" good job "),
+                "good job",
+                )
+            self.assertEqual(
+                fmter.cvt.person_name_formatter("   Michael  Jackson"),
+                "Michael Jackson",
+                )
+            self.assertEqual(
+                fmter.cvt.title_formatter(" do you want   to build  a snow man? "),
+                "Do You Want to Build a Snow Man?",
+                )
+            self.assertEqual(
+                fmter.cvt.sentence_formatter(" do you want   to build  a snow man? "),
+                "Do you want to build a snow man?",
+                )
+            self.assertEqual(
+                fmter.cvt.tag_formatter(" korean pop"),
+                "Korean_Pop",
+                )
+            
+        def test_FormatMaster(self):
+            testdata = [
+                        " do you want   to build  a snow man? ",
+                        "",
+                        "   Michael Jackson",
+                        "Boom! "
+                        ]
+            self.assertListEqual(
+                fmter.convert_list(testdata, fmter.cvt.person_name_formatter),
+                ["Do You Want To Build A Snow Man?", "", "Michael Jackson", "Boom!"],
+                )
+            
+    unittest.main()
