@@ -303,6 +303,9 @@ class SearchEngine():
         self.metadata = MetaData()
         self.create_all_tables()
     
+    def commit(self):
+        self.engine.commit()
+    
     def create_all_tables(self):
         ## create the main table
         self.metadata = MetaData()
@@ -428,8 +431,8 @@ class SearchEngine():
         return Query(self.schema)
     
     
-    def search(self, query):
-        """根据query进行单元搜索, 返回record tuple
+    def _search(self, query):
+        """根据query进行单元搜索, 返回record tuple. 本方法为search()和search_document()方法的内核
         """
         main_sqlcmd_select_uuid, main_sqlcmd_select_all, keyword_sqlcmd_list = query.create_sql()
 
@@ -477,7 +480,18 @@ class SearchEngine():
         ### 情况4, 空查询
         else:
             pass
-
+    
+    def search(self, query):
+        """根据query进行单元搜索, 返回record tuple
+        """
+        counter = 0
+        for record in self._search(query):
+            counter += 1
+            if counter <= query.limit_number:
+                yield record
+            else:
+                return
+            
     def search_document(self, query):
         """根据query进行单元搜索, 返回document ordereddict
         example: OrderedDict({field_name: field_value})

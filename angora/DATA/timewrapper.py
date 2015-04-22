@@ -47,7 +47,7 @@ Prerequisites
 
 Import Command
 --------------
-    from angora.DATA.timewrapper import timewrapper
+    from angora.DATA.timewrapper import TimeWrapper, timewrapper
 """
 
 from __future__ import print_function

@@ -287,8 +287,13 @@ class Update():
                     res.append("%s = %s" % (column.column_name, 
                                             value.sqlcmd ) ) # 直接使用
                 except: # value是一个值, 处理绝对更新
-                    res.append("%s = %s" % (column.column_name, 
-                                            column.__SQL__(value) ) ) # 将 = value 中 value 的部分处理
+                    if isinstance(value, str):
+                        res.append("%s = '%s'" % (column.column_name, 
+                                                value.replace("'", "''").replace('"', '\"') ) ) # 将 = value 中 value 的部分处理
+                        value = value.replace("'", "''").replace('"', '\"')
+                    else:
+                        res.append("%s = %s" % (column.column_name, 
+                                                column.__SQL__(value) ) ) # 将 = value 中 value 的部分处理
             
         self.set_clause = "SET\n\t%s" % ",\n\t".join(res)
         return self
@@ -1071,7 +1076,7 @@ class Table():
 class Sqlite3Engine():
     def __init__(self, dbname, autocommit=True):
         self.dbname = dbname
-        self.autocommit = autocommit
+        self.is_autocommit = autocommit
         
         sqlite3.register_adapter(list, adapt_list)
         sqlite3.register_converter("PYTHONLIST", convert_list)
@@ -1100,7 +1105,7 @@ class Sqlite3Engine():
         self.connect = sqlite3.connect(dbname, detect_types=sqlite3.PARSE_DECLTYPES)
         self.cursor = self.connect.cursor()
         
-        if self.autocommit:
+        if self.is_autocommit:
             self._commit = self.commit
         else:
             self._commit = self.commit_nothing
@@ -1122,8 +1127,10 @@ class Sqlite3Engine():
         """switch on or off autocommit
         """
         if flag:
+            self.is_autocommit = True
             self._commit = self.commit
         else:
+            self.is_autocommit = False
             self._commit = self.commit_nothing
             
     ### === Insert ===

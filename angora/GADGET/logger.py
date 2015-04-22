@@ -1,26 +1,45 @@
-##encoding=UTF8
+##encoding=utf-8
 
 """
-Messenger
----------
-    一个print消息管理小工具
-    能很轻易地将所有print函数禁用和激活, 而无需修改和注释大量代码
+Copyright (c) 2015 by Sanhe Hu
+------------------------------
+    Author: Sanhe Hu
+    Email: husanhe@gmail.com
+    Lisence: LGPL
+
+Module description
+------------------
+    Messenger
+        一个print消息管理小工具
+        能很轻易地将所有print函数禁用和激活, 而无需修改和注释大量代码
     
-Log
----
-    一个简单的日志文件夹和日志文件的管理小工具
-    能很轻易的把捕获到的异常和自定义错误信息写入到日志中, 并在屏幕上以自定义的缩进形式将错误信息打印出来。
-    用户可以设定写入日志时是否同时打印到屏幕上, 并可以自定义缩进大小。
-
-    建议在用到try, except语法时, 在except语法块中使用:
-        log.write(message, index, indent, enable_verbose)
+    Log
+        一个简单的日志文件夹和日志文件的管理小工具
+        能很轻易的把捕获到的异常和自定义错误信息写入到日志中, 并在屏幕上以自定义的缩进形式将错误信息打印出来。
+        用户可以设定写入日志时是否同时打印到屏幕上, 并可以自定义缩进大小。
     
-compatibility: compatible to python2 and python3
+        建议在用到try, except语法时, 在except语法块中使用:
+            log.write(message, index, indent, enable_verbose)
+    
+Keyword
+-------
+    log
+    
+    
+Compatibility
+-------------
+    Python2: Yes
+    Python3: Yes
 
-prerequisites: None
 
-import:
-    from angora.GADGET.logger import Messenger, Log
+Prerequisites
+-------------
+    None
+
+
+Import Command
+--------------
+    from angora.GADGET.logger import Messenger, messenger, Log
 """
 
 from __future__ import print_function
@@ -50,14 +69,14 @@ class Messenger():
         但是我们想要一次性禁用所有的print(), 我们只需要调用Messenger.off()即可。同样如果需要恢复打印功能, 
         我们只需要调用Messenger.on()即可
     """
-    def __init__(self, echo=True):
+    def __init__(self, enable_verbose=True):
         """echo=False to disable all Messenger.show()
         """
-        self.echo=echo
-        if self.echo:
-            self.show=self._print_screen
+        self.enable_verbose = enable_verbose
+        if self.enable_verbose:
+            self.show = self._print_screen
         else:
-            self.show=self._not_print_screen
+            self.show = self._not_print_screen
             
     def _print_screen(self, text):
         print(text)
@@ -67,12 +86,14 @@ class Messenger():
 
     def on(self):
         """enable Messenger.show()"""
-        self.show=self._print_screen
+        self.show = self._print_screen
         
     def off(self):
         """disable Messenger.show()"""
-        self.show=self._not_print_screen
-    
+        self.show = self._not_print_screen
+
+messenger = Messenger()
+
 class Log(object):
     """
     [CN]usage

@@ -123,7 +123,7 @@ def import_help():
     GADGET_modules = [
     "from angora.GADGET.configuration import Configuration",
     "from angora.GADGET.fileIO import str2file, file2str",
-    "from angora.GADGET.logger import Messenger, Log",
+    "from .logger import Messenger, messenger, Log",
     "from angora.GADGET.logicflow import tryit",
     "from angora.GADGET.pytimer import Timer",
     ]
