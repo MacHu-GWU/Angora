@@ -602,48 +602,64 @@ class WinExplorer(object):
 
 if __name__ == "__main__":
     import unittest
-    
+    from datetime import datetime
+    class OtherTest(unittest.TestCase):
+        def test_string_SizeInBytes(self):
+            self.assertEqual(string_SizeInBytes(100), "100 B")
+            self.assertEqual(string_SizeInBytes(100000), "97.66 KB")
+            self.assertEqual(string_SizeInBytes(100000000), "95.37 MB")
+            self.assertEqual(string_SizeInBytes(100000000000), "93.13 GB")
+            self.assertEqual(string_SizeInBytes(100000000000000), "90.95 TB")
+            
     class WinfileTest(unittest.TestCase):
-        def setUp(self):
-            pass
-
+        def test_change_initial_mode(self):
+            WinFile.set_initialize_mode(fastmode=True)
+            winfile = WinFile("windowsexplorer.py")
+            self.assertTrue("size_on_disk" not in winfile.__dict__)
+            self.assertTrue("atime" not in winfile.__dict__)
+            self.assertTrue("ctime" not in winfile.__dict__)
+            self.assertTrue("mtime" not in winfile.__dict__)
+            
         def test_initial(self):
+            WinFile.set_initialize_mode(fastmode=False)
             winfile = WinFile("windowsexplorer.py")
             self.assertEqual("windowsexplorer", winfile.fname)
             self.assertEqual(".py", winfile.ext)
             self.assertEqual("windowsexplorer.py", winfile.basename)
             self.assertIn(r"angora\LIBRARIAN", winfile.dirname)
-            print(winfile.size_on_disk)
-            print(winfile.atime)
-            print(winfile.ctime)
-            print(winfile.mtime)
-
-    class FileCollectionsTest(unittest.TestCase):
-        def setUp(self):
-            self.python_dir_list = [r"C:\Python27\libs", r"C:\Python33\libs", r"C:\Python34\libs"]
-
-
-        def test_print_files_has_text(self):
-            for path in self.python_dir_list:
-                try:
-                    fc = FileCollections.from_path(path)
-                    fc.print_files_has_text("python")
-                    break
-                except:
-                    pass
-
-    class WindowsExplorerTest(unittest.TestCase):
-        def setUp(self):
-            self.python_dir_list = [r"C:\Python27\libs", r"C:\Python33\libs", r"C:\Python34\libs"]
+            print("size = %sBytes" % winfile.size_on_disk)
+            print("access time = %s" % datetime.fromtimestamp(winfile.atime))
+            print("create time = %s" % datetime.fromtimestamp(winfile.ctime))
+            print("modify time = %s" % datetime.fromtimestamp(winfile.mtime))
             
-        def test_search_by_text(self):
-            for path in self.python_dir_list:
-                try:
-                    fc = FileCollections.from_path(path)
-                    fc.print_files_has_text("python")
-                    break
-                except:
-                    pass
+        
+            
+#     class FileCollectionsTest(unittest.TestCase):
+#         def setUp(self):
+#             self.python_dir_list = [r"C:\Python27\libs", r"C:\Python33\libs", r"C:\Python34\libs"]
+# 
+# 
+#         def test_print_files_has_text(self):
+#             for path in self.python_dir_list:
+#                 try:
+#                     fc = FileCollections.from_path(path)
+#                     fc.print_files_has_text("python")
+#                     break
+#                 except:
+#                     pass
+# 
+#     class WindowsExplorerTest(unittest.TestCase):
+#         def setUp(self):
+#             self.python_dir_list = [r"C:\Python27\libs", r"C:\Python33\libs", r"C:\Python34\libs"]
+#             
+#         def test_search_by_text(self):
+#             for path in self.python_dir_list:
+#                 try:
+#                     fc = FileCollections.from_path(path)
+#                     fc.print_files_has_text("python")
+#                     break
+#                 except:
+#                     pass
 
     unittest.main()
     

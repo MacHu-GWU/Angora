@@ -1,4 +1,4 @@
-##encoding=UTF8
+##encoding=utf-8
 
 from .binarysearch import (find_index, find_lt, find_le, find_gt, find_ge,
     find_last_true, find_nearest)

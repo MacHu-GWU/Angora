@@ -1,5 +1,5 @@
-##encoding=UTF8
+##encoding=utf-8
 
 from .core import (MetaData, Sqlite3Engine, Table, Column, DataType, Row, 
-    _and, _or, desc, Select)
+    and_, or_, desc, Select)
 from .wrapper import iterC

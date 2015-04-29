@@ -38,7 +38,8 @@ Prerequisites
 
 Import Command
 --------------
-    from .core import MetaData, Sqlite3Engine, Table, Column, DataType, Row, Select
+    from .core import (MetaData, Sqlite3Engine, Table, Column, DataType, Row, 
+        and_, or_, desc, Select)
 """
 
 from angora.DATA.dtype import StrSet, IntSet, StrList, IntList
@@ -339,12 +340,12 @@ class Update():
 #                                                #
 ##################################################
 
-def _and(*argv):
+def and_(*argv):
     """AND join list of where clause criterions
     """
     return _Select_config("(%s)" % " AND ".join([i.sqlcmd for i in argv]))
 
-def _or(*argv):
+def or_(*argv):
     """OR join list of where clause criterions
     """
     return _Select_config("(%s)" % " OR ".join([i.sqlcmd for i in argv]))
@@ -1319,15 +1320,15 @@ if __name__ == "__main__":
     dtype = DataType()
     test = Table("test", metadata,
         Column("integer_type", dtype.integer, primary_key=True),
-        Column("real_type", dtype.real),
-        Column("text_type", dtype.text),
-        Column("date_type", dtype.date),
-        Column("datetime_type", dtype.datetime),
-        Column("pickle_type", dtype.pickletype),
-        Column("strlist_type", dtype.strlist),
-        Column("intlist_type", dtype.intlist),
-        Column("strset_type", dtype.strset),
-        Column("intset_type", dtype.intset),
+        Column("real_type", dtype.real, default=-1),
+        Column("text_type", dtype.text, default="Nothing"),
+        Column("date_type", dtype.date, default=date(2014,1,1)),
+        Column("datetime_type", dtype.datetime, default=datetime(2014,1,1,0,0,0)),
+        Column("pickle_type", dtype.pickletype, default={"测试": 123}),
+        Column("strlist_type", dtype.strlist, default=StrList(["aaa", "bbb", "ccc"])),
+        Column("intlist_type", dtype.intlist, default=IntList([111, 222, 333])),
+        Column("strset_type", dtype.strset, default=StrSet({"aaa", "bbb", "ccc"})),
+        Column("intset_type", dtype.intset, default=IntSet({111, 222, 333})),
         )
     metadata.create_all(engine)
     
@@ -1346,7 +1347,8 @@ if __name__ == "__main__":
         row["strset_type"] =  StrSet({"a", "b", "c"})
         row["intset_type"] =  IntSet({1, 2, 3})
         rows.append(Row.from_dict(row))
-
+    
+    rows.append(Row.from_dict({"integer_type": 10}))
     engine.insert_many_rows(ins, rows)
 
     ### ========== Put temp code here ============
@@ -1425,8 +1427,18 @@ if __name__ == "__main__":
             self.assertEqual(test.strlist_type.__SQL__(StrList(["a","b","c"])), "'a&&b&&c'")
             
     class SqliteEngineUnittest(unittest.TestCase):
+        # === select, select_row, select_column ===
         def test_select(self):
-            """测试select_row能否返回Row对象, 即可以用Row.key或Row[key]的方法获得值
+            """测试select能否返回record tuple
+            """
+            results = list(engine.select(Select(test.all)) )
+            self.assertEqual(results[0][0], 0)
+            self.assertDictEqual(results[1][5], {1: "a", 2: "b", 3: "c"})
+            self.assertListEqual(results[2][6], StrList(["a", "b", "c"]))
+            self.assertSetEqual(results[3][9], IntSet({1, 2, 3}))
+        
+        def test_select_row(self):
+            """测试select能否返回Row对象, 即可以用Row.key或Row[key]的方法获得值
             """
             results = list(engine.select_row(Select(test.all)) )
             self.assertEqual(results[0].integer_type, 0)
@@ -1439,7 +1451,14 @@ if __name__ == "__main__":
             """
             df = engine.select_column(Select([test.integer_type]))
             self.assertListEqual(df["integer_type"], list(range(10)))
-
+            
+        def test_where(self):
+            results = list(engine.select_row(
+                        Select(test.all).\
+                        where(test.text_type == None)
+                        ))
+            print(results)
+        # === select, where ===
     class InsertUnittest(unittest.TestCase):
         def test_sqlcmd(self):
             """测试Insert是否能够根据不同的record, Row自动判断其中的类型, 然后生成用于插入到

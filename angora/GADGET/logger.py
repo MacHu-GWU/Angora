@@ -7,6 +7,7 @@ Copyright (c) 2015 by Sanhe Hu
     Email: husanhe@gmail.com
     Lisence: LGPL
 
+
 Module description
 ------------------
     Messenger
@@ -20,6 +21,7 @@ Module description
     
         建议在用到try, except语法时, 在except语法块中使用:
             log.write(message, index, indent, enable_verbose)
+    
     
 Keyword
 -------

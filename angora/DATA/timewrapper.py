@@ -92,36 +92,36 @@ class TimeWrapper(object):
         self.date_templates = list()
         self.datetime_templates = list()
         
-        # Create templates
-        # batch processing some
-        year_formats = ["%Y", "%y"]
-        month_formats = ["%m", "%b", "%B"]
-        day_formats = ["%d"]
-        pads = ["/", "-", " "]
-        for orders in itertools.permutations([year_formats, month_formats, day_formats], 3):
-            for od in [(od0, od1, od2) for od0 in orders[0] for od1 in orders[1] for od2 in orders[2] ]:
-                for pad in pads:
-                    self.date_templates.append(pad.join(od))
-        
         # add some datetime.date templates here
+        self.date_templates.append("%Y-%m-%d") # 2014-09-20
+        self.date_templates.append("%m/%d/%Y") # 09/20/2014
+        self.date_templates.append("%d/%m/%Y") # 20/09/2014
         self.date_templates.append("%B %d, %Y") # September 20, 2014
         self.date_templates.append("%b %d, %Y") # Sep 20, 2014
+        self.date_templates.append("%Y%m%d") # 20140920
         
         # add some datetime.datetime templates here
         self.datetime_templates.append("%Y-%m-%d %H:%M:%S") # "2014-01-15 17:58:31"
+        self.datetime_templates.append("%Y-%m-%d %H:%M:%S.%f") # "2014-01-15 17:58:31.1234"
         self.datetime_templates.append("%Y-%m-%dT%H:%M:%S") # "2014-01-15T17:58:31"
-        self.datetime_templates.append("%Y-%m-%d") # "2014-01-15"
-        self.datetime_templates.append("%y%m%d%H") # "2014011517"
+        self.datetime_templates.append("%Y-%m-%dT%H:%M:%S.%f") # "2014-01-15T17:58:31.1234"
+        
         self.datetime_templates.append("%m/%d/%Y %H:%M") # "2014-01-15 14:05"
         self.datetime_templates.append("%Y-%m-%d %I:%M:%S %p") # 2014-01-15 5:58:31 PM
         self.datetime_templates.append("%m/%d/%Y %I:%M:%S %p") # 1/15/2014 5:58:31 PM
-        
-        
-        
-        self.default_date_template = "%Y-%m-%d"     # 日期默认模板
-        self.iso_dateformat = "%Y-%m-%d"            # 国际标准模板
-        self.default_datetime_templates = "%Y-%m-%d %H:%M:%S"                   # 日期时间默认模板
-        self.iso_datetimeformat = "%Y-%m-%d %H:%M:%S"                           # 国际标准模板
+        self.datetime_templates.append("%d/%m/%Y %I:%M:%S %p") # 15/01/2014 5:58:31 PM
+
+        self.datetime_templates.append("%Y-%m-%d") # 2014-09-20
+        self.datetime_templates.append("%m/%d/%Y") # 09/20/2014
+        self.datetime_templates.append("%d/%m/%Y") # 20/09/2014
+        self.datetime_templates.append("%B %d, %Y") # September 20, 2014
+        self.datetime_templates.append("%b %d, %Y") # Sep 20, 2014
+        self.datetime_templates.append("%Y%m%d") # 20140920
+
+        self.default_date_template = "%Y-%m-%d"                  # 日期默认模板
+        self.iso_dateformat = "%Y-%m-%d"                         # 国际标准模板
+        self.default_datetime_templates = "%Y-%m-%d %H:%M:%S"    # 日期时间默认模板
+        self.iso_datetimeformat = "%Y-%m-%d %H:%M:%S"            # 国际标准模板
         
     ### ====== date manipulate ======
     
@@ -324,8 +324,10 @@ class TimeWrapper(object):
                     end = self.str2datetime(end)
                 elif not isinstance(end, dt): 
                     raise Exception("end has to be datetime str or datetime")
+                if start > end: # if start time later than end time, raise error
+                    raise Exception("start time has to be eariler and equal than end time")
                 start = start - interval
-                for _ in range(2**28):
+                while 1:
                     start += interval
                     if start <= end:
                         yield converter(start)
@@ -352,16 +354,28 @@ class TimeWrapper(object):
         else:
             raise Exception("Must specify two of start, end, or periods")
 
-    ###################################
-    # random datetime, date generator #
-    ###################################
-    
+    ##########################################
+    # timestamp, toordinary method extension #
+    ##########################################
     def totimestamp(self, datetime_object):
         """Because in python2 datetime doesn't have timestamp() method,
         so we have to implement in a python2,3 compatible way.
         """
         return (datetime_object - dt(1969, 12, 31, 20, 0)).total_seconds()
     
+    def fromtimestamp(self, timestamp):
+        """because python doesn't support negative timestamp to datetime
+        so we have to implement my own method
+        """
+        if timestamp >= 0:
+            return dt.fromtimestamp(timestamp)
+        else:
+            return dt(1969, 12, 31, 20, 0) + td(seconds=timestamp)
+
+
+    ###################################
+    # random datetime, date generator #
+    ###################################
     def randdate(self, start=date(1970,1,1), end=date.today()):
         """generate a random date between start to end
 
@@ -478,6 +492,23 @@ if __name__ == "__main__":
                                     end=dt(2014,1,1,3,10,0), 
                                     freq="5min"))
                 )
+        
+        def test_totimestamp_fromtimestamp(self):
+            a_datetime = dt(1997, 7, 7, 12, 0, 0)
+            try:
+                self.assertEqual(a_datetime.timestamp(), timewrapper.totimestamp(a_datetime))
+                self.assertEqual(dt.fromtimestamp(123456789), timewrapper.fromtimestamp(123456789))
+            except:
+                self.assertEqual(868291200, timewrapper.totimestamp(a_datetime))
+                self.assertEqual(dt.fromtimestamp(123456789), timewrapper.fromtimestamp(123456789))
+                
+            a_datetime = dt(1924, 2, 19, 12, 0, 0)
+            try:
+                self.assertEqual(a_datetime.timestamp(), timewrapper.totimestamp(a_datetime))
+                self.assertEqual(dt.fromtimestamp(-123456789), timewrapper.fromtimestamp(-123456789))
+            except:
+                self.assertEqual(-1447401600, timewrapper.totimestamp(a_datetime))
+                self.assertEqual(dt(1966, 2, 1, 22, 26, 51), timewrapper.fromtimestamp(-123456789))
         
         def test_randdate_randdatetime(self):
             # test random date is between the boundary

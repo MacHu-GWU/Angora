@@ -1,1 +1,3 @@
-##encoding=UTF8
+##encoding=utf-8
+
+from .googleGeocoder import GoogleGeocoder

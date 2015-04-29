@@ -1,4 +1,4 @@
-##encoding=UTF8
+##encoding=utf-8
 
 from .configuration import Configuration
 from .fileIO import str2file, file2str

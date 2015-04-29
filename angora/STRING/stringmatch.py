@@ -48,6 +48,7 @@ class StrMatcher():
         for pair in process.extract(text, choice):
             print(pair)
 
+
 smatcher = StrMatcher()
 
 if __name__ == "__main__":
