@@ -94,8 +94,10 @@ class TimeWrapper(object):
         
         # add some datetime.date templates here
         self.date_templates.append("%Y-%m-%d") # 2014-09-20
+        self.date_templates.append("%m-%d-%Y") # 09-20-2014
         self.date_templates.append("%m/%d/%Y") # 09/20/2014
         self.date_templates.append("%d/%m/%Y") # 20/09/2014
+        self.date_templates.append("%Y/%m/%d") # 2014/09/20
         self.date_templates.append("%B %d, %Y") # September 20, 2014
         self.date_templates.append("%b %d, %Y") # Sep 20, 2014
         self.date_templates.append("%Y%m%d") # 20140920
@@ -112,8 +114,10 @@ class TimeWrapper(object):
         self.datetime_templates.append("%d/%m/%Y %I:%M:%S %p") # 15/01/2014 5:58:31 PM
 
         self.datetime_templates.append("%Y-%m-%d") # 2014-09-20
+        self.datetime_templates.append("%m-%d-%Y") # 09-20-2014
         self.datetime_templates.append("%m/%d/%Y") # 09/20/2014
         self.datetime_templates.append("%d/%m/%Y") # 20/09/2014
+        self.datetime_templates.append("%Y/%m/%d") # 2014/09/20
         self.datetime_templates.append("%B %d, %Y") # September 20, 2014
         self.datetime_templates.append("%b %d, %Y") # Sep 20, 2014
         self.datetime_templates.append("%Y%m%d") # 20140920

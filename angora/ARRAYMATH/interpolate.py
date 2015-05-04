@@ -22,6 +22,10 @@ Import Command
 
 import bisect
 import sys
+try: # if angora not installed, then interpolate datetime are not working
+    from angora.DATA.timewrapper import timewrapper
+except:
+    pass
 
 is_py2 = (sys.version_info[0] == 2)
 if is_py2:
@@ -65,6 +69,7 @@ class LinearInterpolator():
 
     def simple_case_interpolate(self, x_old, y_old, x_new):
         """simple case means, x_new[0] >= x_old[0] and x_new[-1] <= x_old[-1]
+        it's an O(n) algorithm
         """
         index = find_le(x_old, x_new[0]) # trim it can boost the speed
         x_old = x_old[index:][::-1] 
@@ -94,6 +99,7 @@ class LinearInterpolator():
 
     def simple_case_interpolate_slower_way(self, x_old, y_old, x_new):
         """simple case means, x_new[0] >= x_old[0] and x_new[-1] <= x_old[-1]
+        it's an O(nlog(n)) algorithm
         """
         x_old, y_old = x_old[::-1], y_old[::-1]
         y_new = list()
@@ -139,6 +145,8 @@ class LinearInterpolator():
         return y_new
 
     def interpolate(self, x_new):
+        """the universal robust interpolate method
+        """
         if x_new[0] < self.first:
             left_pad_x = [x_new[0],]
             left_pad_y = [self.locate(self.x_old[0], self.y_old[0], 
@@ -158,7 +166,75 @@ class LinearInterpolator():
         
     def __call__(self, x_new):
         return self.interpolate(x_new)
+
+   
+def linear_interp(x_old, y_old, x_new):
+    f = LinearInterpolator(x_old, y_old)
+    return f(x_new)
+
+def linear_interp_datetime(x_old, y_old, x_new):
+    x_old = [timewrapper.totimestamp(x) for x in x_old]
+    x_new = [timewrapper.totimestamp(x) for x in x_new]
+    f = LinearInterpolator(x_old, y_old)
+    return f(x_new)
+
+def check_reliability(x_old, x_new, bound):
+    """Because we got x_new interpolated from x_old, so we have to label new
+    time point as reliable or not reliable. The rule is this:
+        if distance of new time point to the nearest old time point <= 600 seconds:
+            we can trust it
+        else:
+            we cannot trust it
+            
+    Here is an O(n) algorithm solution. A lots of improvement than old O(n^2) one.
+    """
+    # add pad that is absolutely out of boundary to the left and right
+    # so the algorithm can still handle out-of-boundary case.
+    if x_new[0] < x_old[0]:
+        left_pad_x = [x_new[0] - 2 * bound,]
+    else:
+        left_pad_x = []
+    if x_new[-1] > x_old[-1]:
+        right_pad_x = [x_new[-1] + 2* bound,]
+    else:
+        right_pad_x = []
+    x_old = left_pad_x + x_old + right_pad_x
     
+    x_old = x_old[::-1]
+    reliable_flag = list()
+    for t in x_new:
+        while 1:
+            try:
+                x = x_old.pop()
+                if x <= t: # if it's a left bound, then continue for right bound
+                    left = x
+                else: # if it's a right bound, calculate reliability
+                    right = x
+                    x_old.append(right)
+                    x_old.append(left)
+                    left_dist, right_dist = t - left, right - t
+                    if left_dist <= right_dist:
+                        reliable_flag.append(left_dist)
+                    else:
+                        reliable_flag.append(right_dist)
+                    break
+            except: # it there's no value to pop out from x_old, the use 
+                reliable_flag.append(t - left)
+                break
+            
+    int_reliable_flag = list()
+    for i in reliable_flag:
+        if i <= bound:
+            int_reliable_flag.append(1)
+        else:
+            int_reliable_flag.append(0)
+    return int_reliable_flag
+    
+def check_reliability_datetime(self, x_new, seconds):
+    x_old = [timewrapper.totimestamp(x) for x in self.x_old]
+    x_new = [timewrapper.totimestamp(x) for x in x_new]
+    return check_reliability(x_old, x_new, seconds)
+
 def arange(start=None, end=None, count=None, gap=None):
     """
     start, end, count
@@ -245,25 +321,31 @@ if __name__ == "__main__":
             x_new1 = arange(start=300000, end=700000, count=654321)
             x_new2 = arange(start=-100, end=1000100, count=654321)
             f = LinearInterpolator(x_old, y_old)
-             
+              
             st = time.clock()
             y_new1 = f.simple_case_interpolate(x_old, y_old, x_new1)
             print(time.clock()-st)
- 
+  
             st = time.clock()
             y_new2 = f.simple_case_interpolate_slower_way(x_old, y_old, x_new1)
             print(time.clock()-st)
-              
+               
             st = time.clock()
             y_new3 = f.bineary_search_interpolate(x_old, y_old, x_new1)
             print(time.clock()-st)
-            
+             
             st = time.clock()
             y_new4 = f.interpolate(x_new2)
             print(time.clock()-st)
-            
+             
             self.assertListEqual(y_new1, y_new2)
             self.assertListEqual(y_new2, y_new3)
+        
+        def test_check_reliability(self):
+            x_old = [0, 5, 100]
+            x_new = [-1, 3, 5, 9, 50]
+            int_reliability_flag = check_reliability(x_old, x_new, 3.5)
+            self.assertListEqual(int_reliability_flag, [1, 1, 1, 0, 0])
             
     class arangeUnittest():
         def test_functionality(self):

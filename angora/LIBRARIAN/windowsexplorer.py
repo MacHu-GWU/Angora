@@ -160,7 +160,8 @@ class WinFile(object):
         """
         self.dirname, self.basename = os.path.split(self.abspath)
         self.fname, self.ext = os.path.splitext(self.basename)
-    
+        self.ext = self.ext.lower()
+        
     @staticmethod
     def set_initialize_mode(fastmode=False):
         """设置WinFile.initialize方法所绑定的初始化方式

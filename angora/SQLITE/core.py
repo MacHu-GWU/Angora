@@ -102,6 +102,10 @@ class Row():
         """
         return Row(tuple(dictionary.keys()), tuple(dictionary.values()))
     
+    def to_dict(self):
+        self._smart_create_dict_view()
+        return self.dictionary_view
+    
     def _create_dict_view(self):
         """
         [CN]为了节约内存, 在初始化Row对象时仅仅是以两个列表的形式储存 column : value 信息。但是在
