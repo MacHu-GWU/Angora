@@ -94,8 +94,8 @@ class GoogleGeocoder():
     def check_usable(self):
         """exam if all API keys are usable. it cost 1 quota for each API keys to perform this check.
         """
+        bad_keys = list()
         for key in self.api.keychain:
-            bad_keys = list()
             try:
                 geocoder = GoogleV3(key)
                 location = geocoder.geocode("1600 Pennsylvania Ave NW, Washington, DC 20500")
@@ -140,12 +140,16 @@ class GoogleGeocoder():
             if not list(engine.select(Select([results.json]).\
                                       where(results.address == address)))[0][0]:
                 time.sleep(self.sleeptime)
+                print("trying to geocode '%s'..." % address)
                 raw = self.geocode(address)
                 if raw: # if successfully geocoded, update
                     engine.update(results.update().\
                                   values(json = raw).\
                                   where(results.address == address))
                     engine.commit()
+                    print("\tSuccess!")
+                else:
+                    print("\tFailed!")
             else:
                 print("'%s' is already successfully geocoded." % address)
                 
@@ -178,16 +182,21 @@ class GoogleGeocoder():
             if not list(engine.select(Select([results.json]).\
                                       where(results.address == hashkey)))[0][0]:
                 time.sleep(self.sleeptime)
+                print("trying to geocode '%s'..." % coordinate)
                 raw = self.reverse(*coordinate)
                 if raw: # if successfully geocoded, update
                     engine.update(results.update().\
                                   values(json = raw).\
                                   where(results.address == hashkey))
                     engine.commit()
+                    print("\tSuccess!")
+                else:
+                    print("\tFailed!")
             else:
                 print("(%s, %s) is already successfully geocoded." % coordinate)
                     
 if __name__ == "__main__":
+    from pprint import pprint as ppt
     """usage example
     """
     list_of_address = [

@@ -515,6 +515,11 @@ class MetaData():
                 pass
 #                 print(e)
     
+    def drop_all(self, engine):
+        """drop all table stored in this metadata
+        """
+        for table in self.tables.values():
+            table.drop(engine)
     
     ### ========== Reflect 方法所需的方法, 主要用来处理column中的default value ===========
     def _eval_converter(self, text):
@@ -1071,7 +1076,14 @@ class Table():
         """
         return Update(self)
 
-
+    def drop(self, engine):
+        """drop a table from database that bind with engine regardless if it is existing.
+        """
+        try:
+            engine.execute("DROP TABLE %s" % self.table_name)
+        except:
+            pass
+        
 ##################################################
 #                                                #
 #              Sqlite3Engine class               #
@@ -1271,7 +1283,9 @@ class Sqlite3Engine():
     def select_column(self, select_obj):
         """返回一个封装好的列表
         """
-        dataframe = {column_name: list() for column_name in select_obj.column_names}
+        dataframe = OrderedDict()
+        for column_name in select_obj.column_names:
+            dataframe[column_name] = list()
         for record in self.select(select_obj):
             for column_name, value in zip(select_obj.column_names, record):
                 dataframe[column_name].append(value)
@@ -1317,6 +1331,7 @@ if __name__ == "__main__":
     from angora.STRING import *
     from angora.DATA import *
     from datetime import datetime, date, timedelta
+    from pprint import pprint as ppt
     import random
     
     engine = Sqlite3Engine(":memory:", autocommit=False)
@@ -1354,7 +1369,9 @@ if __name__ == "__main__":
     
     rows.append(Row.from_dict({"integer_type": 10}))
     engine.insert_many_rows(ins, rows)
+    
 
+    
     ### ========== Put temp code here ============
 
     class ColumnUnittest(unittest.TestCase):
