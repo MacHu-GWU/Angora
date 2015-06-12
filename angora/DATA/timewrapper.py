@@ -47,7 +47,7 @@ Prerequisites
 
 Import Command
 --------------
-    from angora.DATA.timewrapper import TimeWrapper, timewrapper
+    from angora.DATA.timewrapper import timewrapper
 """
 
 from __future__ import print_function
@@ -126,9 +126,20 @@ class TimeWrapper(object):
         self.iso_dateformat = "%Y-%m-%d"                         # 国际标准模板
         self.default_datetime_templates = "%Y-%m-%d %H:%M:%S"    # 日期时间默认模板
         self.iso_datetimeformat = "%Y-%m-%d %H:%M:%S"            # 国际标准模板
+    
+    def add_date_template(self, template):
+        """manually add a date format template so TimeWrapper can recognize it.
+        A better way is to edit the source code and add it.
+        """
+        self.default_date_template.append(template)
+        
+    def add_datetime_template(self, template):
+        """manually add a datetime format template so TimeWrapper can recognize it.
+        A better way is to edit the source code and add it.
+        """
+        self.default_datetime_templates.append(template)
         
     ### ====== date manipulate ======
-    
     def reformat(self, dtstring, before, after):
         """将dtstring从原来的#before格式转换成#after格式"""
         DT = dt.strptime(dtstring, before)

@@ -16,21 +16,25 @@ class PandasReadBigFile(unittest.TestCase):
     """
     验证pandas读取大文件时, 如果只读取前两行, 是否需要的时间极短
     """
-#     def setUp(self):
-#         df = list()
-#         complexity = 10000
-#         for _ in range(complexity):
-#             df.append( (
-#                         fmter.tpl.randstr(32), 
-#                         random.randint(1, 1000), 
-#                         random.random(),
-#                         timewrapper.randdate("1980-01-01", "2015-04-28").\
-#                         strftime("%b %m, %Y"),
-#                         timewrapper.randdatetime("1980-01-01 00:00:00", "2015-04-28 23:59:59").\
-#                         strftime("%m/%d/%Y %I:%M:%S %p")
-#                         ) )
-#         df = pd.DataFrame(df, columns=["ID", "INTEGER", "REAL", "CREATE_DATE", "CREATE_DATETIME"])
-#         df.to_csv(r"testdata\bigcsvfile.txt", index=False)
+    def setUp(self):
+        try:
+            os.mkdir("testdata")
+        except:
+            pass
+        df = list()
+        complexity = 10000
+        for _ in range(complexity):
+            df.append( (
+                        fmter.tpl.randstr(32), 
+                        random.randint(1, 1000), 
+                        random.random(),
+                        timewrapper.randdate("1980-01-01", "2015-04-28").\
+                        strftime("%b %m, %Y"),
+                        timewrapper.randdatetime("1980-01-01 00:00:00", "2015-04-28 23:59:59").\
+                        strftime("%m/%d/%Y %I:%M:%S %p")
+                        ) )
+        df = pd.DataFrame(df, columns=["ID", "INTEGER", "REAL", "CREATE_DATE", "CREATE_DATETIME"])
+        df.to_csv(r"testdata\bigcsvfile.txt", index=False)
     
     def test_verify(self):
         """验证读取一个大文件的前几行时间是否小于0.01秒
@@ -70,7 +74,7 @@ class PandasReadBigFile(unittest.TestCase):
 #         except:
 #             pass
     
-# unittest.main()
+unittest.main()
 
 def test_pandas_apply_method_performance():
     """在pandas中apply方法可以用来批量对数据进行修改:

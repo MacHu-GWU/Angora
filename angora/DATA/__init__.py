@@ -10,7 +10,7 @@ from .iterable import (take, flatten, flatten_all, nth, shuffled, grouper, group
     running_windows, cycle_running_windows, cycle_slice, count_generator)
 from .js import load_js, dump_js, safe_dump_js, prt_js, js2str
 from .pk import load_pk, dump_pk, safe_dump_pk, obj2bytestr, bytestr2obj, obj2str, str2obj
-from .timewrapper import TimeWrapper, timewrapper
+from .timewrapper import timewrapper
 
 # __all__ = [
 #            "binarysearch",

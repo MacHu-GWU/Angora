@@ -57,7 +57,7 @@ def plot_one_day(x, y, xlabel=None, ylabel=None, title=None, ylim=None):
         plt.ylim([min(y) - (max(y) - min(y) ) * 0.05, 
                   max(y) + (max(y) - min(y) ) * 0.05])
     
-    return plt
+    return plt, ax
 
 def plot_one_week(x, y):
     """时间跨度为一周
@@ -95,7 +95,7 @@ def plot_one_week(x, y):
                              ) 
                )
     
-    return plt
+    return plt, ax
 
 def plot_one_month(x, y):
     """时间跨度为一月
@@ -128,7 +128,7 @@ def plot_one_month(x, y):
                              ) 
                )
     
-    return plt
+    return plt, ax
 
 def plot_one_quarter(x, y):
     """时间跨度为一年
@@ -166,7 +166,7 @@ def plot_one_quarter(x, y):
                              ) 
                )
     
-    return plt
+    return plt, ax
 
 def plot_one_year(x, y):
     """时间跨度为一年
@@ -204,7 +204,7 @@ def plot_one_year(x, y):
                              ) 
                )
     
-    return plt
+    return plt, ax
 
 if __name__ == "__main__":
     import pandas as pd, numpy as np
@@ -214,7 +214,7 @@ if __name__ == "__main__":
                           freq = "15min")
         
         y = np.random.rand(len(x))
-        plt = plot_one_day(x, y)
+        plt, ax = plot_one_day(x, y)
         plt.show()
         
 #     unittest_plot_one_day()
@@ -225,7 +225,7 @@ if __name__ == "__main__":
                           freq = "1H")
         
         y = np.random.rand(len(x))
-        plt = plot_one_week(x, y)
+        plt, ax = plot_one_week(x, y)
         plt.show()
         
 #     unittest_plot_one_week()
@@ -236,7 +236,7 @@ if __name__ == "__main__":
                           freq = "1H")
         
         y = np.random.rand(len(x))
-        plt = plot_one_month(x, y)
+        plt, ax = plot_one_month(x, y)
         plt.show()
         
 #     unittest_plot_one_month()
@@ -247,7 +247,7 @@ if __name__ == "__main__":
                           freq = "D")
         
         y = np.random.rand(len(x))
-        plt = plot_one_quarter(x, y)
+        plt, ax = plot_one_quarter(x, y)
         plt.show()
         
 #     unittest_plot_one_quarter()
@@ -258,7 +258,7 @@ if __name__ == "__main__":
                           freq = "D")
         
         y = np.random.rand(len(x))
-        plt = plot_one_year(x, y)
+        plt, ax = plot_one_year(x, y)
         plt.show()
         
 #     unittest_plot_one_year()

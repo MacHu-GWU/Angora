@@ -7,6 +7,8 @@
     site-packages下。不支持需要C预编译文件的库。
 """
 
+from __future__ import print_function
+
 if __name__ == "__main__":
     def install():
         """
@@ -44,7 +46,7 @@ if __name__ == "__main__":
             except:
                 pass
             
-        # remove currently installed HSH packages and 
+        # remove currently installed packages and 
         # copy file to site-packages in all python versions
         for pyroot in py2_folders + py3_folders:
             dst = os.path.join("C:\\", pyroot, 

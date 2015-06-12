@@ -50,7 +50,7 @@ from angora.DATA import *
 import time
 
 metadata = MetaData()
-engine = Sqlite3Engine("geocoding.sqlite3", autocommit=False)
+engine = Sqlite3Engine("geocoding.sqlite", autocommit=False)
 datatype = DataType()
 results = Table("results", metadata,
     Column("address", datatype.text, primary_key=True),
@@ -194,7 +194,19 @@ class GoogleGeocoder():
                     print("\tFailed!")
             else:
                 print("(%s, %s) is already successfully geocoded." % coordinate)
-                    
+    
+    def lookup(self, address):
+        """return geocoded json record of the address
+        """
+        result = list(engine.select(Select([results.json]).where(results.address == address)))[0][0]
+        return result
+    
+    def lookup_by_coordinate(self, la, lg):
+        """return geocoded json record of the coordinate, the decimal has to be exactly right
+        """
+        result = list(engine.select(Select([results.json]).where(results.address == str(hash((la, lg))))))[0][0]
+        return result
+        
 if __name__ == "__main__":
     from pprint import pprint as ppt
     """usage example

@@ -59,3 +59,7 @@ def knn_impute(train, k):
             train[(i, na_col_ind[j])] = candidate[~np.isnan(candidate)][:k+1].mean()
     
     return train
+
+
+if __name__ == "__main__":
+    pass
