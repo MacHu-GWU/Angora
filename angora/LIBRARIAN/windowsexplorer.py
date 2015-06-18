@@ -7,6 +7,7 @@ Copyright (c) 2015 by Sanhe Hu
     Email: husanhe@gmail.com
     Lisence: LGPL
 
+
 Module description
 ------------------
     在python2中, 若路径有非ascii字符, 会带来许多错误, 所以本模组最好在python3环境中使用

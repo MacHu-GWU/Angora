@@ -62,7 +62,7 @@ def md5_obj(obj):
     if is_py2:
         m.update( pickle.dumps(obj, protocol = pickle_protocol) )
     else:
-        m.update( str(pickle.dumps(obj, protocol = pickle_protocol)).encode("utf-8") )
+        m.update( str(pickle.dumps(obj, protocol = pickle_protocol) ).encode("utf-8") )
         
     return m.hexdigest()
 

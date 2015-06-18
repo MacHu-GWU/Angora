@@ -1,4 +1,4 @@
-##encoding=UTF8
+##encoding=utf-8
 
 """
 Copyright (c) 2015 by Sanhe Hu
@@ -49,11 +49,11 @@ Import Command
     
 """
 
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import pickle
 import base64
-import sys
 import os, shutil
+import sys
 import time
 
 is_py2 = (sys.version_info[0] == 2)
@@ -62,22 +62,22 @@ if is_py2:
 else:
     pk_protocol = 3
 
-def load_pk(fname, enable_verbose = True):
+def load_pk(abspath, enable_verbose = True):
     """load object from pickle file"""
     if enable_verbose:
-        print("\nLoading from %s..." % fname)
+        print("\nLoading from %s..." % abspath)
         st = time.clock()
-    with open(fname, "rb") as f:
+    with open(abspath, "rb") as f:
         obj = pickle.load(f)
     if enable_verbose:
         print("\tComplete! Elapse %s sec." % (time.clock() - st) )
     return obj
 
-def dump_pk(obj, fname, pickle_protocol = pk_protocol, replace = False, enable_verbose = True):
+def dump_pk(obj, abspath, pickle_protocol = pk_protocol, replace = False, enable_verbose = True):
     """dump object to pickle file
     [Args]
     ------
-    fname: save as file name
+    abspath: save as file name
     
     pickle_protocol: pickle protocol version. 
         For PY2, default is 2, for PY3, default is 3. But if you want create 2&3 compatible pickle,
@@ -90,30 +90,30 @@ def dump_pk(obj, fname, pickle_protocol = pk_protocol, replace = False, enable_v
     enable_verbose: boolean, default True. Triggle for message
     """
     if enable_verbose:
-        print("\nDumping to %s..." % fname)
+        print("\nDumping to %s..." % abspath)
         st = time.clock()
     
-    if os.path.exists(fname): # if exists, check replace option
+    if os.path.exists(abspath): # if exists, check replace option
         if replace: # replace existing file
-            with open(fname, "wb") as f:
+            with open(abspath, "wb") as f:
                 pickle.dump(obj, f, protocol = pickle_protocol)
         else: # stop, print error message
-            raise Exception("\tCANNOT WRITE to %s, it's already exists" % fname)
+            raise Exception("\tCANNOT WRITE to %s, it's already exists" % abspath)
     else: # if not exists, just write to it
-        with open(fname, "wb") as f:
+        with open(abspath, "wb") as f:
             pickle.dump(obj, f, protocol = pickle_protocol)
         
     if enable_verbose:
         print("\tComplete! Elapse %s sec" % (time.clock() - st) )
 
-def safe_dump_pk(obj, fname, pickle_protocol = pk_protocol, enable_verbose = True):
+def safe_dump_pk(obj, abspath, pickle_protocol = pk_protocol, enable_verbose = True):
     """
     [EN]Function dump_pk has a fatal flaw. When replace = True, if the program is interrupted by 
     any reason. It only leave a incomplete file. (Because fully writing take time). And it silently
     overwrite the file with the same file name.
     
     1. dump pickle to a temp file.
-    2. rename it to #fname, and overwrite it.
+    2. rename it to #abspath, and overwrite it.
     
     [CN]dump_pk函数在当replace=True时，会覆盖掉同名的文件。但是将编码后的字符串写入pickle是需要时间的，
     如果在这期间发生异常使程序被终止，那么会导致原来的文件已经被覆盖，而新文件还未完全被写入。这样会导致
@@ -122,9 +122,9 @@ def safe_dump_pk(obj, fname, pickle_protocol = pk_protocol, enable_verbose = Tru
     重命名覆盖原文件。这样即使中途程序被中断，也仅仅是留下了一个未完成的临时文件而已，不会影响原文件。
     
     """
-    temp_fname = "%s.tmp" % fname
-    dump_pk(obj, temp_fname, pickle_protocol = pk_protocol, replace = True, enable_verbose = enable_verbose)
-    shutil.move(temp_fname, fname)
+    temp_abspath = "%s.tmp" % abspath
+    dump_pk(obj, temp_abspath, pickle_protocol = pk_protocol, replace = True, enable_verbose = enable_verbose)
+    shutil.move(temp_abspath, abspath)
 
 def obj2bytestr(obj, pickle_protocol = pk_protocol):
     """convert arbitrary object to database friendly bytestr"""
@@ -154,16 +154,21 @@ if __name__ == "__main__":
         def test_write_and_read(self):
             data = {1: [1, 2], 2: ["是", "否"]} 
             safe_dump_pk(data, "data.p")
-            data = load_pk("data.p")
-            print(data)
+            data = load_pk("data.p") # should be a 
             self.assertEqual(data[1][0], 1)
             self.assertEqual(data[2][0], "是")
+        
+        def test_handle_object(self):
+            python_object = {"a": 1}
+            self.assertEqual(str2obj(obj2str(python_object)), python_object)
             
         def test_obj2bytestr(self):
             """pickle.dumps的结果是bytes, 而在python2中的sqlite不支持bytes直接插入数据库,
             必须使用base64.encode将bytes编码成字符串之后才能存入数据库。
             而在python3中, 可以直接将pickle.dumps的bytestr存入数据库, 这样就省去了base64编码的开销
-             
+              
+            注: 在python2中也有通过设定 connect.text_factory 的方法解决该问题, 具体内容请google
+              
             Will not pass in Python2, because pickle.loads unable to parse non-ascii code
             """         
             conn = sqlite3.connect(":memory:")
@@ -171,11 +176,15 @@ if __name__ == "__main__":
             c.execute("CREATE TABLE test (dictionary BLOB) ") # BLOB is byte
             c.execute("INSERT INTO test VALUES (?)", 
                       (obj2bytestr({1:"a", 2:"你好"}),))
-              
+               
             print(c.execute("select * from test").fetchone()) # see what stored in database
-            print(bytestr2obj(c.execute("select * from test").fetchone()[0])) # recovery object from byte str
+            self.assertDictEqual(bytestr2obj(c.execute("select * from test").fetchone()[0]),
+                                 {1:"a", 2:"你好"}) # recovery object from byte str
  
         def test_obj2str(self):
+            """如果将任意python对象dump成pickle bytestr, 再通过base64 encode转化成ascii字符串, 就
+            可以任意的存入数据库了
+            """
             conn = sqlite3.connect(":memory:")
             c = conn.cursor()
             c.execute("CREATE TABLE test (name TEXT) ")

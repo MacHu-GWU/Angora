@@ -4,6 +4,7 @@ from .binarysearch import (find_index, find_lt, find_le, find_gt, find_ge,
     find_last_true, find_nearest)
 from .dicttree import DictTree
 from .dtype import OrderedSet, StrSet, IntSet, StrList, IntList
+from .fingerprint import fingerprint
 from .hashutil import md5_str, md5_obj, md5_file, hash_obj
 from .invertindex import invertindex
 from .iterable import (take, flatten, flatten_all, nth, shuffled, grouper, grouper_dict, grouper_list,

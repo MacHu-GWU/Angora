@@ -101,5 +101,10 @@ def zip_many_files(list_of_abspath, dst):
     os.chdir(base_dir)
     
 if __name__ == "__main__":
-    zip_a_folder(r"C:\Python27\Scripts", "1.zip")
-    zip_everything_in_a_folder(r"C:\Python27\Scripts", "2.zip")
+    from angora.DATA.fingerprint import fingerprint
+    
+    def test_all():
+        zip_a_folder(r"C:\Python33\Scripts", "1.zip")
+        zip_everything_in_a_folder(r"C:\Python33\Scripts", "2.zip")
+        
+    test_all()
